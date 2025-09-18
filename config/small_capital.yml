@@ -1,0 +1,112 @@
+# Configuration pour PETIT CAPITAL - 1000$ 
+# IMPORTANT: Configuration optimisée pour commencer avec 1000$
+
+# Configuration générale
+environment: "small_capital"
+debug: false
+log_level: "INFO"
+timezone: "UTC"
+
+# Capital de départ réaliste
+capital:
+  initial_capital: 1000            # 1000$ de départ
+  min_trade_size: 20               # 20$ minimum par trade (2%)
+  max_trade_size: 100              # 100$ maximum par trade (10%)
+  reserve_cash: 100                # 100$ toujours en réserve (10%)
+
+# Configuration APIs Exchange - OBLIGATOIRE
+exchanges:
+  binance:
+    api_key: "YOUR_BINANCE_API_KEY"      # REMPLACER PAR VOTRE CLÉ
+    api_secret: "YOUR_BINANCE_SECRET"    # REMPLACER PAR VOTRE SECRET
+    sandbox: true                        # DÉMARRER EN TESTNET
+    testnet_url: "https://testnet.binance.vision"
+    
+# MLflow simplifié
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: "small-capital-bot"
+  auto_log: true
+
+# Assets pour petit capital - SEULEMENT LES PLUS LIQUIDES
+assets:
+  symbols: ["BTCUSDT", "ETHUSDT"]     # Seulement BTC et ETH pour commencer
+  base_currency: "USDT"
+  timeframes:
+    primary: "1h"
+
+# Stratégies optimisées pour petit capital
+alphas:
+  mean_reversion:
+    enabled: true
+    weight: 0.6                    # Priorité sur mean reversion
+    lookback_window: 8             # Plus réactif
+    z_entry_threshold: 1.2         # Plus agressif
+    z_exit_threshold: 0.3          # Sortie rapide
+    max_position_hold: 12          # 12h max
+    min_trade_size: 0.02          # 2% capital minimum
+    
+  dmn_model:
+    enabled: false                 # Désactivé pour commencer
+    weight: 0.4
+    
+  funding_strategy:
+    enabled: false                 # Désactivé pour commencer
+
+# Gestion du risque ULTRA CONSERVATIVE pour 1000$
+risk_management:
+  max_portfolio_risk: 0.02         # 2% du capital par trade
+  max_daily_drawdown: 0.05         # 5% max par jour
+  position_sizing_method: "fixed_fractional"
+  stop_loss_pct: 0.03              # 3% stop loss
+  take_profit_pct: 0.06            # 6% take profit
+  max_positions_per_asset: 1
+  max_total_positions: 1           # UNE SEULE position à la fois
+  max_correlation: 0.3
+  
+  # Contrôles spéciaux petit capital
+  max_consecutive_losses: 2        # Stop après 2 pertes
+  daily_loss_limit: 0.03          # 3% perte max par jour  
+  min_trade_interval: 7200         # 2h minimum entre trades
+  emergency_stop_dd: 0.10          # Arrêt d'urgence si DD > 10%
+
+# Coûts réalistes Binance
+backtest:
+  initial_capital: 1000
+  commission: 0.001                # 0.1% avec réduction BNB
+  slippage: 0.002                  # 0.2% slippage
+  min_trade_amount: 10             # 10 USDT minimum Binance
+  
+# Monitoring simplifié
+monitoring:
+  enabled: true
+  check_interval: 600              # 10 minutes
+  alerts:
+    telegram:
+      enabled: false
+    email: 
+      enabled: false
+      
+# Performance mode économique
+performance:
+  max_workers: 2                   # Moins de workers
+  low_memory_mode: true           # Mode économique
+  
+# Pipeline simplifié
+pipeline:
+  run_interval: 7200               # Chaque 2 heures
+  steps:
+    data_fetching: true
+    feature_engineering: true  
+    alpha_generation: true
+    psr_selection: false           # Désactivé pour commencer
+    regime_detection: false        # Désactivé pour commencer
+    ml_export: false               # Désactivé pour commencer
+    monitoring: true
+
+# Mode développement/paper trading
+development:
+  test_mode: false
+  paper_trading: true              # PAPER TRADING pour commencer
+  reduced_data: true
+  fast_backtest: true

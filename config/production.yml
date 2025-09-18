@@ -1,0 +1,262 @@
+# Configuration Production - Quantitative Trading Framework
+# IMPORTANT: Remplacez les valeurs par défaut par vos vraies clés API
+
+# Configuration générale
+environment: "production"
+debug: false
+log_level: "INFO"
+timezone: "UTC"
+
+# Configuration base de données
+database:
+  host: "localhost"
+  port: 5432
+  database: "quantdb"
+  username: "quantuser"
+  password: "quantpass"  # CHANGEZ MOI!
+  pool_size: 10
+  echo: false
+
+# Configuration Redis (cache)
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null  # Ajoutez un mot de passe en production
+  decode_responses: true
+
+# Configuration APIs Exchange
+exchanges:
+  binance:
+    api_key: "YOUR_BINANCE_API_KEY"      # OBLIGATOIRE - Remplacez par votre clé
+    api_secret: "YOUR_BINANCE_SECRET"    # OBLIGATOIRE - Remplacez par votre secret
+    sandbox: false                       # false = production, true = testnet
+    testnet_url: "https://testnet.binance.vision"
+    prod_url: "https://api.binance.com"
+    
+  okx:
+    api_key: "YOUR_OKX_API_KEY"         # OPTIONNEL - Pour diversifier les sources
+    api_secret: "YOUR_OKX_SECRET"
+    passphrase: "YOUR_OKX_PASSPHRASE"
+    sandbox: false
+
+# Configuration MLflow
+mlflow:
+  tracking_uri: "file:///opt/quant-stack-production/mlruns"
+  experiment_name: "quantbot-production"
+  artifact_location: "/opt/quant-stack-production/mlartifacts"
+  auto_log: true
+  log_models: true
+
+# Configuration des assets à trader
+assets:
+  symbols: ["BTCUSDT", "ETHUSDT", "ADAUSDT", "SOLUSDT"]
+  base_currency: "USDT"
+  
+  # Timeframes supportés
+  timeframes:
+    primary: "1h"
+    secondary: ["4h", "1d"]
+
+# Configuration des alphas
+alphas:
+  dmn_model:
+    enabled: true
+    weight: 0.3                   # Réduire poids (était 0.4)
+    lookback_periods: [10, 20, 50] # Plus court terme (était [20, 50, 100])
+    lstm_units: 32                # Plus simple (était 64)
+    dense_units: 16               # Plus simple (était 32)
+    dropout_rate: 0.3             # Plus de régularisation (était 0.2)
+    prediction_confidence_min: 0.6 # Seuil de confiance minimum
+    position_size_multiplier: 0.5  # Réduire taille positions
+    max_daily_trades: 3           # Limiter fréquence
+    
+  mean_reversion:
+    enabled: true
+    weight: 0.35
+    lookback_window: 10         # Plus réactif pour crypto (était 20)
+    z_entry_threshold: 1.0      # Plus agressif pour crypto (était 1.5)
+    z_exit_threshold: 0.2       # Sortie plus rapide (était 0.5)
+    max_position_hold: 24       # 24h max (était 48h)
+    min_trade_size: 0.005       # 0.5% capital minimum par trade
+    volatility_scaling: true    # Adapter size selon volatilité
+    
+  funding_strategy:
+    enabled: true
+    weight: 0.25
+    funding_threshold: 0.005      # 0.5% (était 1% - trop élevé)
+    min_funding_rate: 0.0005     # 0.05% (était 0.1%)  
+    max_leverage: 2.0            # 2x max (était 3x - trop risqué)
+    use_ml_prediction: false     # Désactiver ML temporairement
+    hedge_ratio: 0.95            # 95% hedge spot vs futures
+    rebalance_threshold: 0.02    # Rebalancer si écart > 2%
+
+# Configuration du risque - PARAMÈTRES RÉALISTES
+risk_management:
+  max_portfolio_risk: 0.01      # 1% du capital par trade (était 2%)
+  max_daily_drawdown: 0.03      # 3% de drawdown max par jour (était 5%)
+  position_sizing_method: "fixed_fractional"  # Plus conservateur que Kelly
+  stop_loss_pct: 0.02           # 2% stop loss (était 3%)
+  take_profit_pct: 0.04         # 4% take profit (était 6%) - ratio 2:1
+  
+  # Limites par asset - PLUS STRICTES
+  max_positions_per_asset: 1
+  max_total_positions: 2        # 2 positions max (était 3)
+  
+  # Gestion des corrélations - PLUS STRICTE
+  max_correlation: 0.5          # 0.5 max (était 0.7)
+  
+  # NOUVEAUX CONTRÔLES:
+  max_consecutive_losses: 3     # Stop après 3 pertes consécutives
+  daily_loss_limit: 0.05        # 5% perte max par jour
+  weekly_profit_target: 0.08    # 8% profit cible par semaine
+  volatility_scaling: true      # Réduire size si volatilité élevée
+  min_trade_interval: 3600      # 1h minimum entre trades
+  emergency_stop_dd: 0.15       # Arrêt d'urgence si DD > 15%
+
+# Configuration du backtesting - COÛTS RÉALISTES
+backtest:
+  initial_capital: 50000        # Capital minimum viable: 50k$
+  commission: 0.002             # 0.2% réaliste (0.1% × 2 pour round-trip)
+  slippage: 0.003              # 0.3% slippage réaliste crypto
+  funding_cost: 0.0001         # 0.01% coût de portage futures/8h
+  withdrawal_fees: 0.0005      # 0.05% frais de retrait
+  lookback_days: 90            # Données pour backtest
+  
+  # NOUVEAUX COÛTS RÉALISTES:
+  binance_spot_fee: 0.001       # 0.1% avec BNB discount
+  binance_futures_fee: 0.0004   # 0.04% maker futures
+  market_impact:                # Impact selon taille
+    btc: 0.0015                 # 0.15% sur BTC
+    eth: 0.002                  # 0.2% sur ETH  
+    altcoins: 0.005             # 0.5% sur altcoins
+  
+  # FRAIS DE FINANCEMENT:
+  funding_frequency: 3          # 3 fois par jour (8h)
+  avg_funding_cost: 0.0003      # 0.03% moyenne par funding
+  
+# Configuration monitoring
+monitoring:
+  enabled: true
+  check_interval: 300          # 5 minutes
+  
+  # Alertes
+  alerts:
+    telegram:
+      enabled: false           # Activez si vous voulez des alertes Telegram
+      bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+      chat_id: "YOUR_TELEGRAM_CHAT_ID"
+      
+    email:
+      enabled: false           # Activez si vous voulez des alertes email
+      smtp_server: "smtp.gmail.com"
+      smtp_port: 587
+      username: "your-email@gmail.com"
+      password: "your-app-password"
+      recipients: ["admin@yourdomain.com"]
+      
+    webhook:
+      enabled: false           # Webhook générique
+      url: "https://your-webhook-url.com/alerts"
+      
+  # Seuils d'alerte
+  thresholds:
+    max_drawdown: 0.10         # Alerte si drawdown > 10%
+    min_sharpe: 0.5            # Alerte si Sharpe < 0.5
+    max_var: 0.05              # Alerte si VaR > 5%
+    system_cpu: 80             # Alerte si CPU > 80%
+    system_memory: 85          # Alerte si RAM > 85%
+    disk_space: 90             # Alerte si disque > 90%
+
+# Configuration cache intelligent
+cache:
+  enabled: true
+  ttl:
+    market_data: 3600          # 1 heure pour données marché
+    features: 7200             # 2 heures pour features
+    models: 86400              # 24 heures pour modèles
+  compression: true
+  max_size_mb: 500
+
+# Configuration des données
+data:
+  # Rétention des données
+  retention_days:
+    raw_data: 365              # 1 an de données brutes
+    features: 180              # 6 mois de features
+    signals: 90                # 3 mois de signaux
+    logs: 30                   # 1 mois de logs
+    
+  # Nettoyage automatique
+  auto_cleanup: true
+  cleanup_hour: 2              # 2h du matin
+
+# Configuration performance
+performance:
+  # Parallélisation
+  max_workers: 4               # Nombre de workers pour traitement parallèle
+  chunk_size: 1000             # Taille des chunks pour traitement batch
+  
+  # Optimisations mémoire
+  low_memory_mode: false       # true sur VPS avec peu de RAM
+  batch_processing: true
+  
+# Configuration sécurité
+security:
+  # Chiffrement des clés sensibles
+  encrypt_api_keys: true
+  encryption_key: "YOUR_32_CHAR_ENCRYPTION_KEY!"  # CHANGEZ MOI! (32 caractères)
+  
+  # Rotation des logs sensibles
+  log_retention: 7             # Jours
+  mask_api_keys_in_logs: true
+  
+  # Validation des ordres
+  double_check_orders: true
+  max_order_value: 1000        # USD max par ordre
+  
+# Configuration système
+system:
+  # Paths
+  data_path: "/opt/quant-stack-production/data"
+  logs_path: "/var/log/quantbot"
+  models_path: "/opt/quant-stack-production/models"
+  
+  # Limites système
+  max_memory_usage: "2GB"      # Limite mémoire par processus
+  max_cpu_time: 3600           # 1 heure max par tâche
+  
+# Configuration du pipeline
+pipeline:
+  # Timing
+  run_interval: 3600           # Exécute chaque heure
+  startup_delay: 60            # 1 minute d'attente au démarrage
+  
+  # Retry logic
+  max_retries: 3
+  retry_delay: 300             # 5 minutes entre tentatives
+  
+  # Étapes du pipeline
+  steps:
+    data_fetching: true
+    feature_engineering: true
+    alpha_generation: true
+    psr_selection: true
+    regime_detection: true
+    ml_export: true
+    monitoring: true
+
+# Configuration développement (pour tests)
+development:
+  test_mode: false             # true pour mode test
+  paper_trading: true          # true pour trading papier
+  reduced_data: false          # true pour utiliser moins de données
+  fast_backtest: false         # true pour backtest rapide
+  
+# Messages de démarrage
+startup_checks:
+  verify_api_keys: true
+  test_database: true
+  check_disk_space: true
+  validate_config: true
+  test_cache: true

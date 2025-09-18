@@ -1,0 +1,90 @@
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 🔧 Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# 📊 MLflow
+mlruns/
+mlartifacts/
+mlflow.log
+
+# 💾 Données temporaires
+data/raw/*.parquet
+data/processed/*.parquet
+cache/
+logs/*.log
+logs/**/*.log
+
+# 🔑 Secrets et Configuration
+.env
+*.key
+*.secret
+config/*.json
+config/*.yaml
+
+# 📈 Exports temporaires
+exports/
+artifacts/
+backups/
+
+# 🧪 Tests et Profiling
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# 🔧 IDE et Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 📦 OS et Système
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 📊 Notebooks Jupyter
+.ipynb_checkpoints
+
+# 🏗️ Build et Distribution
+*.manifest
+*.spec
+
+# 🎯 Spécifique Quant Stack
+*.backup.*
+*_contaminated_*
+monitoring/alerts.log
+portfolio_monitor.log
