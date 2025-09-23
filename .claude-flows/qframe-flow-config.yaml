@@ -1,0 +1,418 @@
+---
+# Configuration principale de Claude Flow pour QFrame Trading Quantitatif
+name: qframe-quantitative-trading-flow-system
+version: 1.0.0
+description: Système complet de flows pour le développement du framework QFrame de trading quantitatif
+
+# Activation des flows
+enabled: true
+auto_load: true
+default_flow: quant-trading-flow
+
+# Configuration globale spécifique QFrame
+global_config:
+  framework: qframe
+  language: python
+  python_version: "3.11"
+  package_manager: poetry
+  project_type: quantitative_trading
+
+  # Outils spécialisés pour finance quantitative
+  tools:
+    linter: "ruff"
+    formatter: "black"
+    type_checker: "mypy"
+    test_runner: "pytest"
+    coverage: "pytest-cov"
+
+    # Outils financiers
+    backtesting: "qframe.backtest"
+    data_analysis: "pandas"
+    ml_framework: "pytorch"
+    feature_engineering: "qframe.features.symbolic_operators"
+    risk_management: "qframe.risk"
+
+  # Intégrations financières
+  financial_integrations:
+    exchanges: ["binance", "coinbase"]
+    data_providers: ["ccxt", "polygon", "alpha_vantage"]
+    ml_tracking: "mlflow"
+    monitoring: "prometheus"
+
+# Flows disponibles pour QFrame
+flows:
+  - name: quant-trading-flow
+    path: ".claude-flows/quant-trading-flow.yaml"
+    auto_activate: true
+    priority: critical
+    specialization: "quantitative_trading"
+
+# Agents spécialisés disponibles
+agents:
+  - name: quant-sparc-specialist
+    path: ".claude-flows/agents/quant-sparc-specialist.yaml"
+    type: methodology
+    auto_load: true
+    specialization: "financial_sparc"
+
+  - name: quant-swarm-coordinator
+    path: ".claude-flows/agents/quant-swarm-coordinator.yaml"
+    type: coordinator
+    auto_load: true
+    specialization: "trading_swarm"
+
+# Templates spécialisés
+templates:
+  - name: qframe-strategy
+    path: ".claude-flows/templates/qframe-strategy-template.yaml"
+    type: strategy
+    description: "Template pour stratégies quantitatives QFrame"
+
+# Hooks système pour trading quantitatif
+hooks:
+  # Hook avant création de stratégie
+  pre_strategy_create:
+    - condition: "*_strategy.py"
+      actions:
+        - validate_qframe_imports
+        - check_strategy_interface
+        - validate_mathematical_formulas
+
+  # Hook après modification de stratégie
+  post_strategy_edit:
+    - condition: "strategies/*_strategy.py"
+      actions:
+        - run_strategy_tests
+        - validate_backtest_compatibility
+        - check_risk_management_integration
+
+  # Hook avant commit de code trading
+  pre_trading_commit:
+    actions:
+      - run_all_strategy_tests
+      - validate_risk_parameters
+      - check_performance_metrics
+      - lint_financial_code
+      - type_check_strategies
+
+  # Hook après backtesting
+  post_backtest:
+    actions:
+      - generate_performance_report
+      - update_strategy_metrics
+      - validate_risk_metrics
+      - archive_backtest_results
+
+  # Hook de monitoring production
+  production_monitoring:
+    frequency: "real_time"
+    actions:
+      - check_strategy_performance
+      - monitor_risk_metrics
+      - validate_signal_generation
+      - alert_on_anomalies
+
+# Commandes personnalisées pour QFrame
+custom_commands:
+  # Commandes de développement de stratégies
+  new_strategy:
+    alias: "ns"
+    description: "Créer une nouvelle stratégie quantitative"
+    workflow: "strategy_development"
+    template: "qframe-strategy"
+    prompt_for:
+      - strategy_name
+      - strategy_type
+      - mathematical_foundation
+      - expected_performance
+
+  # Commandes de backtesting
+  backtest:
+    alias: "bt"
+    description: "Lancer un backtest de stratégie"
+    command: "poetry run python backtests/{strategy_name}_backtest.py --start-date {start_date} --end-date {end_date}"
+    prompt_for:
+      - strategy_name
+      - start_date
+      - end_date
+
+  # Commandes d'analyse de performance
+  analyze:
+    alias: "analyze"
+    description: "Analyser les performances d'une stratégie"
+    command: "poetry run python scripts/analyze_strategy.py {strategy_name}"
+    workflow: "performance_analysis"
+
+  # Commandes ML
+  train_model:
+    alias: "train"
+    description: "Entraîner un modèle ML pour stratégie"
+    command: "poetry run python scripts/train_model.py --strategy {strategy_name} --model {model_type}"
+    workflow: "ml_optimization"
+
+  # Commandes de gestion des risques
+  risk_check:
+    alias: "risk"
+    description: "Vérifier les métriques de risque"
+    command: "poetry run python scripts/risk_analysis.py --portfolio"
+    agent: "quant-risk-manager"
+
+  # Commandes de recherche d'alphas
+  alpha_research:
+    alias: "alpha"
+    description: "Recherche d'alphas avec RL"
+    command: "poetry run python scripts/alpha_discovery.py --method {method} --universe {universe}"
+    swarm: "alpha_discovery_swarm"
+
+  # Commandes SPARC quantitatif
+  quant_sparc:
+    alias: "qs"
+    description: "Lancer un cycle SPARC quantitatif"
+    agent: "quant-sparc-specialist"
+    workflow: "quantitative_strategy_sparc"
+    prompt_for:
+      - hypothesis
+      - mathematical_model
+      - target_metrics
+
+  # Commandes de déploiement
+  deploy_strategy:
+    alias: "deploy"
+    description: "Déployer une stratégie en production"
+    workflow: "production_deployment"
+    swarm: "production_trading_swarm"
+    prompt_for:
+      - strategy_name
+      - allocation
+      - risk_limits
+
+# Variables d'environnement spécifiques
+environment:
+  PYTHONPATH: "${PWD}:${PYTHONPATH}"
+  QFRAME_CONFIG_PATH: "${PWD}/config"
+  QFRAME_DATA_PATH: "${PWD}/data"
+  QFRAME_LOGS_PATH: "${PWD}/logs"
+
+  # Variables pour backtesting
+  BACKTEST_DATA_PATH: "${PWD}/data/historical"
+  BACKTEST_RESULTS_PATH: "${PWD}/results/backtests"
+
+  # Variables MLOps
+  MLFLOW_TRACKING_URI: "http://localhost:5000"
+  MLFLOW_EXPERIMENT_NAME: "qframe-strategies"
+
+  # Variables de monitoring
+  PROMETHEUS_URL: "http://localhost:9090"
+  GRAFANA_URL: "http://localhost:3000"
+
+# Paramètres de performance pour trading
+performance:
+  max_parallel_agents: 8
+  cache_enabled: true
+  cache_ttl: 1800  # 30 minutes pour données financières
+  memory_limit: "16GB"  # Plus élevé pour ML
+  cpu_limit: 8
+
+  # Optimisations spécifiques trading
+  vectorization: enabled
+  parallel_backtesting: enabled
+  model_caching: enabled
+  feature_caching: enabled
+
+# Logging spécialisé pour trading
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: ".claude-flows/logs/qframe-flow.log"
+  rotate: true
+  max_size: "50MB"
+  backup_count: 10
+
+  # Logs spécialisés
+  trading_logs:
+    signals: ".claude-flows/logs/signals.log"
+    performance: ".claude-flows/logs/performance.log"
+    risk: ".claude-flows/logs/risk.log"
+    backtests: ".claude-flows/logs/backtests.log"
+
+# Métriques spécialisées finance
+metrics:
+  collect: true
+  targets:
+    # Métriques de trading
+    - sharpe_ratio
+    - sortino_ratio
+    - max_drawdown
+    - win_rate
+    - profit_factor
+    - calmar_ratio
+
+    # Métriques ML
+    - information_coefficient
+    - rank_ic
+    - hit_rate
+    - alpha_decay
+
+    # Métriques système
+    - signal_latency
+    - backtest_speed
+    - model_inference_time
+    - data_processing_time
+
+    # Métriques de risque
+    - var_95
+    - expected_shortfall
+    - beta
+    - correlation_breakdown
+
+# Seuils d'alerte pour trading
+alert_thresholds:
+  performance:
+    min_sharpe_ratio: 1.0
+    max_drawdown: 0.20
+    min_win_rate: 0.50
+
+  risk:
+    max_var_95: 0.05
+    max_portfolio_correlation: 0.70
+    max_single_position: 0.15
+
+  system:
+    max_signal_latency: 100  # ms
+    min_data_availability: 0.95
+    max_model_drift: 0.10
+
+# Configuration des environnements de trading
+trading_environments:
+  research:
+    paper_trading: true
+    data_latency: "acceptable"
+    risk_limits: "relaxed"
+    model_retraining: "weekly"
+
+  staging:
+    paper_trading: true
+    data_latency: "low"
+    risk_limits: "moderate"
+    model_retraining: "daily"
+
+  production:
+    paper_trading: false
+    data_latency: "ultra_low"
+    risk_limits: "strict"
+    model_retraining: "adaptive"
+    compliance_monitoring: true
+
+# Validation et conformité
+validation:
+  require_backtests: true
+  min_backtest_period: "1_year"
+  min_sharpe_ratio: 1.0
+  max_drawdown: 0.20
+  require_risk_assessment: true
+  require_documentation: true
+
+# Messages personnalisés pour trading
+messages:
+  welcome: |
+    🚀 QFrame Quantitative Trading Flow activé !
+
+    Framework: QFrame v{version}
+    Environment: {environment}
+
+    Commandes rapides:
+    - ns: Nouvelle stratégie
+    - bt: Backtesting
+    - alpha: Recherche d'alphas
+    - qs: SPARC quantitatif
+
+    Type 'help' pour voir toutes les commandes.
+
+  strategy_created: |
+    ✅ Stratégie {strategy_name} créée avec succès !
+
+    Prochaines étapes:
+    1. Implémenter la logique de signal
+    2. Configurer les features symboliques
+    3. Lancer un backtest: bt {strategy_name}
+    4. Optimiser les performances
+
+    📊 Template généré:
+    - Strategy: qframe/strategies/{category}/{strategy_name}_strategy.py
+    - Config: qframe/strategies/{category}/{strategy_name}_config.py
+    - Tests: tests/test_{strategy_name}.py
+    - Backtest: backtests/{strategy_name}_backtest.py
+
+  backtest_complete: |
+    📈 Backtest terminé pour {strategy_name} !
+
+    📊 Résultats:
+    - Sharpe Ratio: {sharpe_ratio:.2f}
+    - Max Drawdown: {max_drawdown:.1%}
+    - Win Rate: {win_rate:.1%}
+    - Total Return: {total_return:.1%}
+    - Profit Factor: {profit_factor:.2f}
+
+    {"⚠️  Attention: Performance sous les seuils!" if sharpe_ratio < 1.0 else "✅ Performance satisfaisante"}
+
+    📁 Rapport détaillé: {report_path}
+
+  production_ready: |
+    🚀 Stratégie {strategy_name} prête pour la production !
+
+    ✅ Validations:
+    - Tests: PASSED
+    - Backtest: PASSED (Sharpe: {sharpe:.2f})
+    - Risk Assessment: PASSED
+    - Performance: PASSED
+
+    🎯 Allocation recommandée: {allocation}%
+    📊 Monitoring configuré
+    🛡️  Risk limits: Active
+
+  alpha_discovered: |
+    🎯 Nouvel alpha découvert !
+
+    📈 Métriques:
+    - Information Coefficient: {ic:.3f}
+    - Rank IC: {rank_ic:.3f}
+    - Hit Rate: {hit_rate:.1%}
+
+    🧮 Formule: {alpha_formula}
+
+    Prochaines étapes:
+    1. Valider en backtest
+    2. Intégrer dans stratégie
+    3. Tester en paper trading
+
+# Raccourcis spécialisés
+shortcuts:
+  "ctrl+b": "backtest"
+  "ctrl+n": "new_strategy"
+  "ctrl+a": "alpha_research"
+  "ctrl+r": "risk_check"
+  "ctrl+q": "quant_sparc"
+  "ctrl+d": "deploy_strategy"
+
+# Configuration avancée
+advanced_config:
+  # Gestion de la mémoire pour ML
+  memory_management:
+    model_cache_size: "4GB"
+    feature_cache_size: "2GB"
+    data_cache_size: "4GB"
+    gc_threshold: 0.8
+
+  # Optimisation des calculs
+  computation_optimization:
+    use_gpu: false  # Auto-detect
+    vectorization_level: "aggressive"
+    parallel_workers: 4
+    batch_size: 1000
+
+  # Configuration réseau pour exchanges
+  network_config:
+    connection_timeout: 10
+    read_timeout: 30
+    max_retries: 3
+    backoff_factor: 1.5

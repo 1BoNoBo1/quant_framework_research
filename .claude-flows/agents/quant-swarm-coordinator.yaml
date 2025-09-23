@@ -1,0 +1,390 @@
+---
+name: quant-swarm-coordinator
+type: coordinator
+description: Coordinateur de swarm spécialisé pour projets de trading quantitatif et recherche financière
+version: 1.0.0
+
+# Configuration du coordinateur quantitatif
+coordinator_config:
+  max_agents: 10
+  parallel_execution: true
+  memory_sharing: enabled
+  task_distribution: "expertise_based"
+  priority_mode: "risk_adjusted"
+  financial_context: true
+
+# Swarms prédéfinis pour finance quantitative
+swarms:
+  # Swarm Recherche & Développement de Stratégies
+  strategy_research_swarm:
+    name: "Quantitative Strategy R&D"
+    agents:
+      - quant-architect
+      - quant-strategy-developer
+      - quant-ml-engineer
+      - quant-backtest-engineer
+      - quant-risk-manager
+      - quant-performance-optimizer
+    coordination_style: "collaborative"
+    focus: "innovation"
+
+  # Swarm Alpha Discovery
+  alpha_discovery_swarm:
+    name: "Alpha Generation & Discovery"
+    agents:
+      - quant-ml-engineer
+      - quant-strategy-developer
+      - alpha-feature-engineer
+      - symbolic-operator-specialist
+      - rl-alpha-generator
+    coordination_style: "competitive"
+    focus: "alpha_generation"
+
+  # Swarm Backtesting & Validation
+  validation_swarm:
+    name: "Strategy Validation & Testing"
+    agents:
+      - quant-backtest-engineer
+      - quant-risk-manager
+      - statistical-validator
+      - monte-carlo-specialist
+      - walk-forward-analyst
+    coordination_style: "sequential"
+    focus: "validation"
+
+  # Swarm Production Trading
+  production_trading_swarm:
+    name: "Live Trading Operations"
+    agents:
+      - quant-exchange-integrator
+      - quant-production-monitor
+      - live-risk-manager
+      - order-execution-specialist
+      - portfolio-manager
+    coordination_style: "real_time"
+    focus: "execution"
+
+  # Swarm MLOps Finance
+  mlops_finance_swarm:
+    name: "ML Operations for Finance"
+    agents:
+      - ml-model-manager
+      - feature-store-engineer
+      - model-validator
+      - drift-detector
+      - experiment-tracker
+    coordination_style: "pipeline"
+    focus: "ml_operations"
+
+  # Swarm High-Frequency Trading
+  hft_swarm:
+    name: "High-Frequency Trading"
+    agents:
+      - latency-optimizer
+      - market-microstructure-analyst
+      - tick-data-processor
+      - co-location-specialist
+      - execution-algorithm-engineer
+    coordination_style: "ultra_fast"
+    focus: "speed"
+
+# Stratégies de coordination pour finance
+coordination_strategies:
+  alpha_research_pipeline:
+    description: "Pipeline de recherche d'alphas"
+    flow:
+      - hypothesis_generation
+      - feature_engineering
+      - model_development
+      - backtesting_validation
+      - risk_assessment
+      - production_preparation
+
+  strategy_ensemble_development:
+    description: "Développement d'ensemble de stratégies"
+    flow:
+      - parallel_strategy_development
+      - correlation_analysis
+      - ensemble_optimization
+      - diversification_validation
+      - portfolio_construction
+
+  real_time_trading_coordination:
+    description: "Coordination en temps réel pour trading"
+    flow:
+      - market_data_synchronization
+      - signal_aggregation
+      - risk_check_parallel
+      - order_optimization
+      - execution_monitoring
+
+# Templates de tâches pour finance quantitative
+task_templates:
+  alpha_development:
+    distribution:
+      researcher:
+        task: "Générer des hypothèses d'alpha"
+        priority: 1
+        deliverable: "research_report"
+      feature_engineer:
+        task: "Créer les features avec opérateurs symboliques"
+        priority: 2
+        deliverable: "feature_pipeline"
+      ml_engineer:
+        task: "Développer les modèles prédictifs"
+        priority: 2
+        deliverable: "trained_models"
+      backtester:
+        task: "Valider par backtesting historique"
+        priority: 3
+        deliverable: "backtest_results"
+      risk_manager:
+        task: "Analyser et valider les risques"
+        priority: 3
+        deliverable: "risk_assessment"
+
+  strategy_optimization:
+    distribution:
+      optimizer:
+        task: "Optimiser les hyperparamètres"
+        priority: 1
+        deliverable: "optimal_params"
+      validator:
+        task: "Validation croisée temporelle"
+        priority: 2
+        deliverable: "validation_metrics"
+      performance_analyst:
+        task: "Analyser les performances détaillées"
+        priority: 2
+        deliverable: "performance_report"
+      production_engineer:
+        task: "Préparer pour la production"
+        priority: 3
+        deliverable: "production_config"
+
+  production_deployment:
+    distribution:
+      integrator:
+        task: "Intégrer avec les exchanges"
+        priority: 1
+        deliverable: "exchange_connections"
+      monitor:
+        task: "Configurer le monitoring"
+        priority: 1
+        deliverable: "monitoring_dashboard"
+      validator:
+        task: "Tester en paper trading"
+        priority: 2
+        deliverable: "paper_trading_results"
+      deployer:
+        task: "Déployer en production"
+        priority: 3
+        deliverable: "live_deployment"
+
+# Protocoles de communication spécialisés
+communication_protocols:
+  alpha_signal_sharing:
+    format: |
+      SIGNAL_TYPE: {alpha|beta|factor}
+      SYMBOL: {trading_symbol}
+      TIMESTAMP: {utc_timestamp}
+      SIGNAL_STRENGTH: {-1.0_to_1.0}
+      CONFIDENCE: {0.0_to_1.0}
+      INFORMATION_COEFFICIENT: {ic_value}
+      RISK_METRICS: {var|drawdown|volatility}
+      SOURCE_AGENT: {agent_name}
+      VALIDATION_STATUS: {pending|validated|rejected}
+
+  risk_alert_protocol:
+    format: |
+      ALERT_LEVEL: {low|medium|high|critical}
+      RISK_TYPE: {market|liquidity|operational|model}
+      PORTFOLIO_IMPACT: {percentage}
+      RECOMMENDED_ACTION: {reduce|hedge|exit|monitor}
+      AFFECTED_STRATEGIES: {strategy_list}
+      TIMESTAMP: {utc_timestamp}
+      AUTO_ACTION_TAKEN: {yes|no}
+
+  performance_update:
+    format: |
+      STRATEGY_ID: {strategy_identifier}
+      TIMEFRAME: {1m|5m|1h|1d}
+      PNL: {current_pnl}
+      SHARPE_RATIO: {current_sharpe}
+      DRAWDOWN: {current_dd}
+      TRADES_COUNT: {number_of_trades}
+      WIN_RATE: {win_percentage}
+      LAST_SIGNAL: {timestamp}
+      STATUS: {running|paused|stopped}
+
+# Mécanismes de synchronisation financière
+synchronization:
+  market_data_sync:
+    frequency: "real_time"
+    latency_tolerance: "50ms"
+    participants: ["all_trading_agents"]
+    fallback: "cached_data"
+
+  risk_validation_checkpoint:
+    frequency: "per_trade"
+    participants: ["risk_manager", "portfolio_manager"]
+    blocking: true
+    timeout: "100ms"
+
+  portfolio_rebalancing:
+    frequency: "daily"
+    participants: ["all_strategy_agents", "portfolio_manager"]
+    coordination: "sequential"
+    market_timing: "market_close"
+
+# Optimisation de performance pour trading
+performance_optimization:
+  ultra_low_latency:
+    enabled: true
+    target_latency: "10ms"
+    techniques:
+      - "memory_pre_allocation"
+      - "cpu_affinity"
+      - "bypass_python_gil"
+      - "native_extensions"
+
+  high_throughput:
+    enabled: true
+    target_throughput: "10000_ops_per_second"
+    techniques:
+      - "vectorized_operations"
+      - "batch_processing"
+      - "parallel_computation"
+      - "streaming_pipelines"
+
+  memory_optimization:
+    enabled: true
+    max_memory: "8GB"
+    techniques:
+      - "efficient_data_structures"
+      - "memory_pooling"
+      - "garbage_collection_tuning"
+      - "data_compression"
+
+# Monitoring spécialisé pour trading
+monitoring:
+  trading_metrics:
+    - pnl_real_time
+    - sharpe_ratio_rolling
+    - max_drawdown_current
+    - win_rate_24h
+    - information_coefficient
+    - correlation_matrix
+    - portfolio_volatility
+    - var_95_confidence
+
+  system_metrics:
+    - signal_generation_latency
+    - order_execution_time
+    - data_feed_latency
+    - model_inference_time
+    - memory_usage
+    - cpu_utilization
+    - network_latency
+    - storage_iops
+
+  alerts:
+    - condition: "drawdown > 10%"
+      action: "pause_strategy"
+      notification: "immediate"
+
+    - condition: "sharpe_ratio < 0.5"
+      action: "review_strategy"
+      notification: "daily_report"
+
+    - condition: "signal_latency > 100ms"
+      action: "switch_data_provider"
+      notification: "engineering_team"
+
+    - condition: "correlation > 0.8"
+      action: "reduce_position_sizes"
+      notification: "risk_team"
+
+# Commandes du coordinateur quantitatif
+commands:
+  deploy_alpha_research:
+    description: "Déployer le swarm de recherche d'alphas"
+    usage: "deploy_alpha_research [hypothesis] [universe] [timeframe]"
+    swarm: "alpha_discovery_swarm"
+
+  validate_strategy:
+    description: "Valider une stratégie avec le swarm de validation"
+    usage: "validate_strategy [strategy_name] [start_date] [end_date]"
+    swarm: "validation_swarm"
+
+  launch_production:
+    description: "Lancer une stratégie en production"
+    usage: "launch_production [strategy_name] [allocation]"
+    swarm: "production_trading_swarm"
+
+  optimize_performance:
+    description: "Optimiser les performances système"
+    usage: "optimize_performance [component] [target_metric]"
+    coordination: "performance_optimization"
+
+  emergency_stop:
+    description: "Arrêt d'urgence de toutes les stratégies"
+    usage: "emergency_stop [reason]"
+    priority: "critical"
+    broadcast: true
+
+# Intégrations spécialisées finance
+integrations:
+  exchanges:
+    - binance:
+        api_type: "spot_futures"
+        latency_requirement: "low"
+        fallback: "coinbase"
+
+    - coinbase:
+        api_type: "spot"
+        institutional: true
+
+  data_providers:
+    - polygon:
+        data_type: "equities_crypto"
+        real_time: true
+
+    - alpha_vantage:
+        data_type: "fundamental"
+        frequency: "daily"
+
+  risk_systems:
+    - riskalyze:
+        integration_type: "api"
+        real_time_monitoring: true
+
+  mlops:
+    - mlflow:
+        tracking_uri: "http://mlflow:5000"
+        model_registry: true
+
+    - wandb:
+        project: "qframe-research"
+        team: "quant-team"
+
+# Configuration par environnement
+environment_configs:
+  research:
+    paper_trading: true
+    high_frequency: false
+    risk_limits: "relaxed"
+    data_latency: "acceptable"
+
+  staging:
+    paper_trading: true
+    high_frequency: true
+    risk_limits: "strict"
+    data_latency: "low"
+
+  production:
+    paper_trading: false
+    high_frequency: true
+    risk_limits: "very_strict"
+    data_latency: "ultra_low"
+    compliance_monitoring: true

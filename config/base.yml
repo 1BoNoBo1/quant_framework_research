@@ -1,0 +1,183 @@
+# Configuration de base QFrame
+# ===========================
+# Configuration partagée entre tous les environnements
+
+app:
+  name: "QFrame - Quantitative Trading Framework"
+  version: "2.0.0"
+  description: "Framework de trading quantitatif professionnel"
+  author: "QFrame Team"
+
+# Configuration du logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    - console
+    - file
+  file:
+    path: "logs/qframe.log"
+    max_size: "100MB"
+    backup_count: 5
+
+# Configuration base de données
+database:
+  engine: "postgresql"
+  host: "localhost"
+  port: 5432
+  name: "qframe"
+  username: "qframe_user"
+  # password via secret
+  pool_size: 10
+  max_overflow: 20
+  echo: false
+  connect_timeout: 30
+  query_timeout: 60
+
+# Configuration Redis
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  max_connections: 10
+  socket_timeout: 5.0
+  decode_responses: true
+
+# Configuration API
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  reload: false
+  workers: 1
+  cors:
+    enabled: true
+    origins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+    headers:
+      - "Content-Type"
+      - "Authorization"
+
+# Configuration MLflow
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "qframe_experiments"
+  artifact_location: "artifacts"
+  run_name_template: "qframe_run_{timestamp}"
+
+# Configuration monitoring
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  health_check:
+    enabled: true
+    path: "/health"
+    interval: 30
+
+# Configuration alertes
+alerts:
+  enabled: true
+  channels:
+    email:
+      enabled: false
+    slack:
+      enabled: false
+    webhook:
+      enabled: true
+
+# Configuration des fournisseurs de données
+data_providers:
+  binance:
+    name: "binance"
+    base_url: "https://api.binance.com"
+    rate_limit: 1200
+    timeout: 30.0
+    retry_attempts: 3
+    retry_delay: 1.0
+  yfinance:
+    name: "yfinance"
+    rate_limit: 2000
+    timeout: 30.0
+
+# Configuration trading
+trading:
+  default_broker: "binance"
+  testnet: true
+  min_order_size: 10.0
+  max_order_size: 10000.0
+  order_timeout: 300
+  max_open_positions: 10
+  position_timeout_hours: 24
+
+# Configuration des stratégies
+strategies:
+  dmn_lstm:
+    name: "DMN_LSTM"
+    enabled: true
+    position_size: 0.02
+    max_positions: 3
+    risk_per_trade: 0.01
+  mean_reversion:
+    name: "Adaptive_Mean_Reversion"
+    enabled: true
+    position_size: 0.015
+    max_positions: 5
+    risk_per_trade: 0.008
+  funding_arbitrage:
+    name: "Funding_Arbitrage"
+    enabled: false
+    position_size: 0.01
+    max_positions: 2
+    risk_per_trade: 0.005
+
+# Configuration gestion des risques
+risk_management:
+  max_portfolio_risk: 0.1
+  max_correlation: 0.7
+  var_confidence: 0.95
+  drawdown_limit: 0.2
+  position_timeout_hours: 24
+  default_stop_loss: 0.05
+  default_take_profit: 0.1
+
+# Configuration backtesting
+backtesting:
+  initial_capital: 100000.0
+  commission: 0.001
+  slippage: 0.0005
+  benchmark_symbol: "SPY"
+  risk_free_rate: 0.02
+
+# Configuration performance
+performance:
+  max_workers: 4
+  cache_ttl: 3600
+  chunk_size: 1000
+  parallel_processing: true
+
+# Configuration sécurité
+security:
+  jwt_algorithm: "HS256"
+  jwt_expire_minutes: 60
+  password_min_length: 8
+  session_timeout: 3600
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 100
+
+# Chemins et répertoires
+paths:
+  data_dir: "data"
+  logs_dir: "logs"
+  artifacts_dir: "artifacts"
+  models_dir: "models"
+  reports_dir: "reports"

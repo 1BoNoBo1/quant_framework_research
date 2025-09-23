@@ -1,0 +1,406 @@
+---
+name: data-science-specialists
+type: specialized-agents
+description: Agents Data Science spécialisés pour améliorer QFrame selon les meilleures pratiques Claude Flow
+version: 1.0.0
+
+# Configuration des agents Data Science
+agents_config:
+  parallel_execution: true
+  data_validation: enabled
+  statistical_rigor: high
+  visualization_quality: professional
+
+# Agents spécialisés Data Science
+agents:
+  # Data Quality Engineer
+  - name: data-quality-engineer
+    type: data-validation
+    description: Spécialiste de la qualité et validation des données financières
+    capabilities:
+      - Validation Great Expectations
+      - Détection d'anomalies en temps réel
+      - Contrôles de cohérence OHLCV
+      - Monitoring de la dérive des données
+      - Quality gates automatiques
+      - Profiling statistique avancé
+    priority: critical
+    tools:
+      - great_expectations
+      - pandas_profiling
+      - evidently
+      - data_drift_detection
+
+  # Statistical Modeler
+  - name: statistical-modeler
+    type: statistical-analysis
+    description: Expert en modélisation statistique pour finance quantitative
+    capabilities:
+      - Modèles de séries temporelles (ARIMA, GARCH)
+      - Tests statistiques parallèles
+      - Analyse de stationnarité
+      - Modélisation de volatilité
+      - Régression avancée (Ridge, Lasso, Elastic Net)
+      - Analyse de cointegration
+    priority: high
+    tools:
+      - statsmodels
+      - arch
+      - scipy
+      - scikit-learn
+
+  # Time Series Specialist
+  - name: time-series-specialist
+    type: temporal-analysis
+    description: Spécialiste des séries temporelles financières
+    capabilities:
+      - Décomposition saisonnière STL
+      - Détection de changements structurels
+      - Analyse spectrale et fréquentielle
+      - Forecasting avec Prophet/LSTM
+      - Regime detection avancé
+      - Analyse de cycles de marché
+    priority: high
+    tools:
+      - prophet
+      - statsmodels
+      - scikit-learn
+      - tensorflow
+
+  # Risk Analyst
+  - name: risk-analyst
+    type: risk-assessment
+    description: Analyste quantitatif des risques
+    capabilities:
+      - Calculs VaR/CVaR parallèles
+      - Stress testing Monte Carlo
+      - Analyse de corrélations dynamiques
+      - Expected Shortfall
+      - Risk parity optimization
+      - Backtesting de modèles de risque
+    priority: critical
+    tools:
+      - scipy
+      - numpy
+      - arch
+      - pyfolio
+
+  # Visualization Specialist
+  - name: visualization-specialist
+    type: data-visualization
+    description: Expert en visualisation de données financières
+    capabilities:
+      - Dashboards interactifs Plotly
+      - Graphiques financiers avancés
+      - Heatmaps de corrélation
+      - Plots de distribution
+      - Visualisation temps réel
+      - Export automatique de rapports
+    priority: medium
+    tools:
+      - plotly
+      - seaborn
+      - matplotlib
+      - dash
+
+  # Performance Analyst
+  - name: performance-analyst
+    type: performance-measurement
+    description: Spécialiste de l'analyse de performance quantitative
+    capabilities:
+      - Attribution de performance
+      - Analyse factorielle (Fama-French)
+      - Calculs de tracking error
+      - Information ratio
+      - Décomposition de Sharpe
+      - Benchmark analysis
+    priority: high
+    tools:
+      - pyfolio
+      - quantlib
+      - pandas
+      - numpy
+
+  # Data Engineer
+  - name: data-engineer
+    type: data-processing
+    description: Ingénieur de données pour pipelines financiers
+    capabilities:
+      - ETL pipelines robustes
+      - Gestion de données temps réel
+      - Optimisation des requêtes
+      - Cache intelligent Redis
+      - Data warehousing
+      - Streaming data processing
+    priority: high
+    tools:
+      - pandas
+      - dask
+      - redis
+      - sqlalchemy
+
+# Swarms Data Science prédéfinis
+swarms:
+  # Swarm d'analyse complète
+  complete_analysis_swarm:
+    name: "Analyse Data Science Complète"
+    agents:
+      - data-quality-engineer
+      - statistical-modeler
+      - time-series-specialist
+      - risk-analyst
+      - performance-analyst
+    coordination: "sequential_with_validation"
+    output: "comprehensive_report"
+
+  # Swarm de validation de données
+  data_validation_swarm:
+    name: "Validation Rigoureuse de Données"
+    agents:
+      - data-quality-engineer
+      - statistical-modeler
+      - data-engineer
+    coordination: "parallel_validation"
+    output: "quality_report"
+
+  # Swarm d'analyse de risque
+  risk_analysis_swarm:
+    name: "Analyse Avancée des Risques"
+    agents:
+      - risk-analyst
+      - statistical-modeler
+      - time-series-specialist
+    coordination: "parallel_risk_calculations"
+    output: "risk_dashboard"
+
+  # Swarm de recherche quantitative
+  quant_research_swarm:
+    name: "Recherche Quantitative Avancée"
+    agents:
+      - statistical-modeler
+      - time-series-specialist
+      - performance-analyst
+      - visualization-specialist
+    coordination: "research_pipeline"
+    output: "research_notebook"
+
+# Workflows Data Science
+workflows:
+  # Workflow d'analyse de données
+  data_analysis_workflow:
+    name: "Pipeline d'Analyse Data Science"
+    steps:
+      - phase: "Data Quality Check"
+        agent: data-quality-engineer
+        tasks:
+          - "Valider la qualité des données OHLCV"
+          - "Détecter les anomalies et outliers"
+          - "Générer le profil statistique"
+
+      - phase: "Statistical Analysis"
+        agent: statistical-modeler
+        tasks:
+          - "Tests de stationnarité"
+          - "Analyse de distribution"
+          - "Corrélations et cointegration"
+
+      - phase: "Time Series Analysis"
+        agent: time-series-specialist
+        tasks:
+          - "Décomposition temporelle"
+          - "Détection de régimes"
+          - "Analyse de cycles"
+
+      - phase: "Risk Assessment"
+        agent: risk-analyst
+        tasks:
+          - "Calculs VaR/CVaR"
+          - "Stress testing"
+          - "Analyse de corrélations"
+
+      - phase: "Visualization"
+        agent: visualization-specialist
+        tasks:
+          - "Génération de graphiques"
+          - "Dashboard interactif"
+          - "Rapport automatique"
+
+  # Workflow de validation en temps réel
+  realtime_validation_workflow:
+    name: "Validation Temps Réel"
+    steps:
+      - phase: "Continuous Monitoring"
+        agents: [data-quality-engineer, data-engineer]
+        concurrent: true
+        tasks:
+          - "Surveillance qualité en continu"
+          - "Alertes automatiques"
+          - "Correction automatique"
+
+# Templates pour analyses Data Science
+analysis_templates:
+  comprehensive_analysis:
+    name: "Analyse Complète de Données Financières"
+    sections:
+      - data_quality_report
+      - statistical_summary
+      - time_series_analysis
+      - risk_metrics
+      - performance_attribution
+      - visualizations
+
+  risk_assessment:
+    name: "Évaluation de Risque Quantitative"
+    sections:
+      - var_calculations
+      - stress_testing
+      - correlation_analysis
+      - tail_risk_measures
+      - scenario_analysis
+
+  performance_analysis:
+    name: "Analyse de Performance Détaillée"
+    sections:
+      - return_attribution
+      - factor_analysis
+      - benchmark_comparison
+      - risk_adjusted_metrics
+      - drawdown_analysis
+
+# Métriques et KPIs Data Science
+metrics:
+  data_quality:
+    - completeness_ratio: "> 0.95"
+    - accuracy_score: "> 0.99"
+    - consistency_index: "> 0.98"
+    - timeliness_score: "> 0.95"
+
+  statistical_validity:
+    - p_value_threshold: "< 0.05"
+    - confidence_interval: "95%"
+    - statistical_power: "> 0.80"
+    - effect_size: "measurable"
+
+  model_performance:
+    - cross_validation_score: "> 0.70"
+    - out_of_sample_accuracy: "> 0.65"
+    - model_stability: "> 0.85"
+    - feature_importance: "documented"
+
+# Configuration des outils
+tools_config:
+  great_expectations:
+    enabled: true
+    suite_name: "qframe_financial_data"
+    expectations:
+      - expect_column_values_to_be_between
+      - expect_column_values_to_not_be_null
+      - expect_table_row_count_to_be_between
+
+  statistical_tests:
+    significance_level: 0.05
+    multiple_testing_correction: "bonferroni"
+    bootstrap_samples: 1000
+
+  visualization:
+    style: "seaborn-v0_8-darkgrid"
+    figure_size: [12, 8]
+    dpi: 300
+    interactive: true
+
+# Patterns d'optimisation
+optimization_patterns:
+  parallel_processing:
+    enabled: true
+    max_workers: 4
+    chunk_size: 1000
+    memory_efficient: true
+
+  caching:
+    enabled: true
+    cache_type: "redis"
+    ttl: 3600
+    cache_statistical_results: true
+
+  lazy_evaluation:
+    enabled: true
+    compute_on_demand: true
+    memory_threshold: "4GB"
+
+# Commandes Data Science
+commands:
+  analyze_data:
+    description: "Analyse complète des données"
+    swarm: "complete_analysis_swarm"
+    output_format: "html_report"
+
+  validate_quality:
+    description: "Validation de qualité des données"
+    agent: "data-quality-engineer"
+    real_time: true
+
+  assess_risk:
+    description: "Évaluation des risques"
+    swarm: "risk_analysis_swarm"
+    parallel: true
+
+  generate_insights:
+    description: "Génération d'insights quantitatifs"
+    swarm: "quant_research_swarm"
+    methodology: "scientific"
+
+# Intégrations externes
+integrations:
+  jupyter:
+    enabled: true
+    notebook_templates: true
+    auto_documentation: true
+
+  mlflow:
+    enabled: true
+    experiment_tracking: true
+    model_versioning: true
+
+  evidently:
+    enabled: true
+    data_drift_monitoring: true
+    model_monitoring: true
+
+  great_expectations:
+    enabled: true
+    data_validation: true
+    automated_testing: true
+
+# Alertes et monitoring
+alerts:
+  data_quality:
+    - condition: "completeness < 0.95"
+      action: "alert_data_team"
+      severity: "high"
+
+    - condition: "anomaly_detected"
+      action: "pause_strategy"
+      severity: "critical"
+
+  statistical_significance:
+    - condition: "p_value > 0.05"
+      action: "flag_result"
+      severity: "medium"
+
+  model_drift:
+    - condition: "accuracy_drop > 0.10"
+      action: "retrain_model"
+      severity: "high"
+
+# Gouvernance et compliance
+governance:
+  data_lineage: enabled
+  audit_trail: enabled
+  version_control: enabled
+  peer_review: required
+
+  documentation:
+    methodology: required
+    assumptions: documented
+    limitations: explicit
+    validation: peer_reviewed

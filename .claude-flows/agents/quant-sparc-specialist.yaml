@@ -1,0 +1,421 @@
+---
+name: quant-sparc-specialist
+type: methodology
+description: Agent SPARC spécialisé pour le développement de stratégies quantitatives et de trading
+version: 1.0.0
+
+# Configuration SPARC pour finance quantitative
+sparc_config:
+  specification:
+    format: "quantitative_research"
+    detail_level: "comprehensive"
+    include_mathematical_proofs: true
+    include_backtesting_plan: true
+
+  pseudocode:
+    style: "financial-python"
+    include_vectorization: true
+    include_risk_calculations: true
+    docstrings: "quant_style"
+
+  architecture:
+    patterns: ["Hexagonal", "Strategy Pattern", "Repository", "Observer", "Factory"]
+    frameworks: ["QFrame", "MLflow", "PyTorch", "CCXT", "TA-Lib"]
+    databases: ["PostgreSQL", "Redis", "TimescaleDB"]
+
+  refinement:
+    iterations: 5
+    validation_steps: true
+    performance_optimization: true
+    risk_validation: true
+
+  completion:
+    backtesting_required: true
+    documentation_required: true
+    monitoring_setup: true
+    production_readiness: true
+
+# Capacités spécialisées en finance quantitative
+capabilities:
+  specification_phase:
+    - "Analyse des objectifs de trading"
+    - "Modélisation mathématique des stratégies"
+    - "Spécification des métriques de performance"
+    - "Définition des contraintes de risque"
+    - "Planification des données historiques"
+    - "Architecture des pipelines ML"
+
+  pseudocode_phase:
+    - "Algorithmes de trading vectorisés"
+    - "Formules alpha avec opérateurs symboliques"
+    - "Logique de gestion des risques"
+    - "Pipelines de feature engineering"
+    - "Modèles ML pour finance"
+
+  architecture_phase:
+    - "Architecture hexagonale pour trading"
+    - "Patterns d'intégration exchange"
+    - "Design de backtesting framework"
+    - "Systèmes de monitoring temps réel"
+    - "Pipeline MLOps pour finance"
+
+  refinement_phase:
+    - "Optimisation des performances NumPy"
+    - "Réduction de la latence"
+    - "Amélioration des métriques de trading"
+    - "Gestion avancée des risques"
+    - "Validation croisée temporelle"
+
+  completion_phase:
+    - "Backtesting complet avec métriques"
+    - "Tests de stress et Monte Carlo"
+    - "Documentation de stratégie"
+    - "Configuration production"
+    - "Monitoring et alertes"
+
+# Templates SPARC pour stratégies quantitatives
+templates:
+  strategy_specification:
+    content: |
+      # Spécification de Stratégie: {strategy_name}
+
+      ## 📊 Hypothèse de Trading
+      **Alpha Source**: {alpha_hypothesis}
+      **Market Inefficiency**: {market_inefficiency}
+      **Time Horizon**: {time_horizon}
+      **Universe**: {trading_universe}
+
+      ## 🎯 Objectifs Quantitatifs
+      - **Sharpe Ratio Target**: {target_sharpe}
+      - **Maximum Drawdown**: < {max_drawdown}%
+      - **Win Rate**: > {min_win_rate}%
+      - **Information Coefficient**: > {min_ic}
+
+      ## 🧮 Modélisation Mathématique
+      ### Signal Generation
+      ```
+      Signal(t) = f(Features(t), Parameters)
+      where Features(t) = [Price, Volume, Technical, Fundamental, Alternative]
+      ```
+
+      ### Position Sizing
+      ```
+      Position(t) = Signal(t) * RiskBudget(t) * VolatilityAdjustment(t)
+      ```
+
+      ### Risk Constraints
+      - **Portfolio VaR**: < {var_limit}%
+      - **Single Asset Weight**: < {max_weight}%
+      - **Sector Exposure**: < {sector_limit}%
+
+      ## 📈 Features & Data
+      ### Primary Features
+      {primary_features}
+
+      ### Derived Features (Symbolic Operators)
+      {symbolic_features}
+
+      ### External Data
+      {external_data}
+
+      ## 🔄 Pipeline Architecture
+      1. **Data Ingestion**: {data_sources}
+      2. **Feature Engineering**: {feature_pipeline}
+      3. **Signal Generation**: {signal_logic}
+      4. **Risk Management**: {risk_system}
+      5. **Execution**: {execution_system}
+
+  strategy_pseudocode:
+    content: |
+      # Pseudocode: {strategy_name}
+
+      ```python
+      from typing import Dict, List, Tuple, Optional
+      import numpy as np
+      import pandas as pd
+      from qframe.core.interfaces import IStrategy, IDataProvider, IRiskManager
+
+      class {StrategyClass}(IStrategy):
+          """
+          {strategy_description}
+
+          Mathematical Model:
+          {mathematical_model}
+
+          Expected Performance:
+          - Sharpe Ratio: {expected_sharpe}
+          - Max Drawdown: {expected_drawdown}%
+          """
+
+          def __init__(
+              self,
+              data_provider: IDataProvider,
+              risk_manager: IRiskManager,
+              params: {StrategyClass}Config
+          ):
+              self.data_provider = data_provider
+              self.risk_manager = risk_manager
+              self.params = params
+              self._initialize_models()
+
+          def _initialize_models(self) -> None:
+              """Initialize ML models and technical indicators."""
+              # Step 1: Initialize feature processors
+              self.feature_processor = self._setup_feature_processor()
+
+              # Step 2: Load/Initialize ML models
+              self.ml_models = self._setup_ml_models()
+
+              # Step 3: Setup technical indicators
+              self.technical_indicators = self._setup_technical_indicators()
+
+          def generate_signals(
+              self,
+              market_data: pd.DataFrame
+          ) -> pd.DataFrame:
+              """
+              Generate trading signals based on market data.
+
+              Args:
+                  market_data: OHLCV data with columns [open, high, low, close, volume]
+
+              Returns:
+                  DataFrame with columns [timestamp, symbol, signal, confidence]
+              """
+              # Step 1: Feature Engineering
+              features = self._engineer_features(market_data)
+
+              # Step 2: Generate Alpha Scores
+              alpha_scores = self._calculate_alpha_scores(features)
+
+              # Step 3: Apply Risk Filters
+              filtered_signals = self._apply_risk_filters(alpha_scores)
+
+              # Step 4: Position Sizing
+              sized_positions = self._calculate_position_sizes(filtered_signals)
+
+              return sized_positions
+
+          def _engineer_features(self, data: pd.DataFrame) -> pd.DataFrame:
+              """Create sophisticated features using symbolic operators."""
+              # Technical features
+              {technical_features_logic}
+
+              # ML-derived features
+              {ml_features_logic}
+
+              # Risk-adjusted features
+              {risk_features_logic}
+
+              return combined_features
+
+          def _calculate_alpha_scores(self, features: pd.DataFrame) -> pd.DataFrame:
+              """Calculate alpha scores using ensemble models."""
+              # Primary model prediction
+              {primary_model_logic}
+
+              # Secondary model validation
+              {secondary_model_logic}
+
+              # Ensemble combination
+              {ensemble_logic}
+
+              return alpha_scores
+
+          def backtest(
+              self,
+              start_date: str,
+              end_date: str,
+              initial_capital: float = 100000
+          ) -> Dict[str, float]:
+              """
+              Comprehensive backtesting with performance metrics.
+
+              Returns:
+                  Performance metrics dictionary
+              """
+              # Step 1: Load historical data
+              historical_data = self._load_backtest_data(start_date, end_date)
+
+              # Step 2: Generate signals
+              signals = self.generate_signals(historical_data)
+
+              # Step 3: Simulate trading
+              portfolio_returns = self._simulate_trading(signals, historical_data)
+
+              # Step 4: Calculate metrics
+              metrics = self._calculate_performance_metrics(portfolio_returns)
+
+              return metrics
+      ```
+
+  architecture_design:
+    content: |
+      # Architecture: {strategy_name} dans QFrame
+
+      ## 🏗️ Vue d'ensemble Architecture Hexagonale
+
+      ```
+      ┌─────────────────────────────────────────────────────────────┐
+      │                    Application Core                          │
+      │  ┌─────────────────────────────────────────────────────┐   │
+      │  │              {StrategyClass}                        │   │
+      │  │  ┌─────────────────────────────────────────────┐   │   │
+      │  │  │            Domain Logic                     │   │   │
+      │  │  │  • Signal Generation                        │   │   │
+      │  │  │  • Risk Management                          │   │   │
+      │  │  │  • Position Sizing                          │   │   │
+      │  │  │  • Performance Tracking                     │   │   │
+      │  │  └─────────────────────────────────────────────┘   │   │
+      │  └─────────────────────────────────────────────────────┘   │
+      └─────────────────────────────────────────────────────────────┘
+                              │
+      ┌───────────────────────┼───────────────────────────────────────┐
+      │                  Ports & Adapters                             │
+      │                                                                │
+      │  Input Ports:          │              Output Ports:           │
+      │  • IDataProvider       │              • IOrderManager         │
+      │  • IRiskManager        │              • IPortfolioManager     │
+      │  • IFeatureProcessor   │              • IMetricsCollector     │
+      │  • IMLModelProvider    │              • IAlertManager         │
+      │                                                                │
+      │  Adapters:                                                     │
+      │  • CCXTDataAdapter     │              • BinanceOrderAdapter   │
+      │  • RedisRiskAdapter    │              • MLflowMetricsAdapter  │
+      │  • PostgreSQLAdapter   │              • SlackAlertAdapter     │
+      └────────────────────────────────────────────────────────────────┘
+      ```
+
+      ## 📊 Flux de Données
+
+      ### 1. Data Pipeline
+      ```
+      Market Data → Feature Engineering → ML Models → Signals → Risk Filters → Orders
+      ```
+
+      ### 2. Components Détaillés
+
+      #### Core Strategy
+      ```python
+      class {StrategyClass}:
+          # Domain logic pure
+          # Pas de dépendances externes
+          # Tests unitaires simples
+      ```
+
+      #### Data Layer
+      ```python
+      class MarketDataRepository:
+          # Gestion des données OHLCV
+          # Cache Redis pour performance
+          # Validation des données
+      ```
+
+      #### ML Layer
+      ```python
+      class MLModelService:
+          # Gestion des modèles PyTorch
+          # Feature store
+          # Model versioning avec MLflow
+      ```
+
+      #### Risk Layer
+      ```python
+      class RiskManagementService:
+          # Calculs VaR temps réel
+          # Position limits
+          # Stress testing
+      ```
+
+      ## 🔄 Patterns Utilisés
+
+      ### 1. Strategy Pattern
+      - Multiple stratégies interchangeables
+      - Configuration par injection
+
+      ### 2. Repository Pattern
+      - Abstraction des sources de données
+      - Testabilité améliorée
+
+      ### 3. Observer Pattern
+      - Notifications temps réel
+      - Monitoring décentralisé
+
+      ### 4. Factory Pattern
+      - Création de stratégies configurables
+      - Support multi-exchange
+
+      ## 🚀 Performance & Scalabilité
+
+      ### Optimisations
+      - **Vectorisation NumPy**: Calculs batch
+      - **Cache Redis**: Features pré-calculées
+      - **Async Processing**: I/O non-bloquant
+      - **Parallel Computing**: Multi-threading
+
+      ### Métriques Cibles
+      - **Latency**: < 50ms signal generation
+      - **Throughput**: > 1000 symbols/second
+      - **Memory**: < 4GB per strategy
+      - **CPU**: < 80% utilization
+
+# Workflows SPARC spécialisés
+workflows:
+  quantitative_strategy_sparc:
+    name: "Cycle SPARC Stratégie Quantitative"
+    steps:
+      - phase: "Specification"
+        tasks:
+          - "Définir l'hypothèse de trading"
+          - "Modéliser mathématiquement la stratégie"
+          - "Spécifier les métriques cibles"
+          - "Identifier les sources de données"
+
+      - phase: "Pseudocode"
+        tasks:
+          - "Écrire les algorithmes de signal"
+          - "Définir le pipeline de features"
+          - "Spécifier la gestion des risques"
+          - "Documenter les modèles ML"
+
+      - phase: "Architecture"
+        tasks:
+          - "Concevoir l'architecture hexagonale"
+          - "Définir les interfaces et adapters"
+          - "Planifier l'intégration MLOps"
+          - "Structurer le backtesting framework"
+
+      - phase: "Refinement"
+        tasks:
+          - "Optimiser les performances NumPy"
+          - "Améliorer les métriques de trading"
+          - "Valider les modèles ML"
+          - "Affiner la gestion des risques"
+
+      - phase: "Completion"
+        tasks:
+          - "Backtesting complet"
+          - "Tests de stress"
+          - "Documentation complète"
+          - "Configuration production"
+
+# Métriques spécifiques au trading
+performance_metrics:
+  trading_metrics:
+    - sharpe_ratio: "> 1.5"
+    - sortino_ratio: "> 2.0"
+    - max_drawdown: "< 15%"
+    - win_rate: "> 55%"
+    - profit_factor: "> 1.3"
+
+  ml_metrics:
+    - information_coefficient: "> 0.05"
+    - rank_ic: "> 0.07"
+    - hit_rate: "> 0.52"
+    - alpha_decay: "< 10 days"
+
+  system_metrics:
+    - signal_latency: "< 50ms"
+    - backtest_speed: "> 100x realtime"
+    - memory_usage: "< 4GB"
+    - cpu_utilization: "< 80%"

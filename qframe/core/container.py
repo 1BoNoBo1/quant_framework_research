@@ -376,8 +376,11 @@ def factory(func: Callable[[], T]) -> Callable[[], T]:
 def configure_services(container: DIContainer):
     """Configuration de base des services framework"""
 
-    # Configuration par défaut - sera étendue lors de l'ajout de services
-    pass
+    # Import local pour éviter les dépendances circulaires
+    from ..infrastructure.config.service_configuration import configure_production_services
+
+    # Configuration complète via le nouveau système
+    configure_production_services(container)
 
 
 # ================================

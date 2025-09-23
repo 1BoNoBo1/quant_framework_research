@@ -1,0 +1,352 @@
+---
+name: quant-trading-flow
+version: 1.0.0
+description: Flow complet pour le développement du framework QFrame de trading quantitatif
+type: quantitative-research-workflow
+
+# Configuration spécifique au trading quantitatif
+config:
+  framework: qframe
+  language: python
+  python_version: "3.11"
+  package_manager: poetry
+  priority: critical
+  auto_activate: true
+  memory_coordination: enabled
+
+# Agents spécialisés pour le trading quantitatif
+agents:
+  # Agent principal d'architecture quantitative
+  - name: quant-architect
+    type: architecture
+    description: Architecte spécialisé en systèmes de trading quantitatif
+    capabilities:
+      - Architecture hexagonale pour trading
+      - Dependency Injection patterns
+      - Design patterns financiers
+      - Intégration MLOps
+      - Systèmes distribués haute performance
+    priority: critical
+
+  # Agent de stratégies quantitatives
+  - name: quant-strategy-developer
+    type: development
+    description: Développeur de stratégies de trading sophistiquées
+    capabilities:
+      - DMN LSTM et architectures Transformer
+      - Mean Reversion adaptatif
+      - Arbitrage de taux de financement
+      - Génération d'alphas par RL
+      - Opérateurs symboliques
+    priority: critical
+
+  # Agent ML/AI pour finance
+  - name: quant-ml-engineer
+    type: machine-learning
+    description: Ingénieur ML spécialisé en finance quantitative
+    capabilities:
+      - PyTorch pour modèles financiers
+      - Feature engineering avancé
+      - Reinforcement Learning (PPO, A3C)
+      - Time series forecasting
+      - Validation temporelle
+    priority: high
+
+  # Agent de backtesting
+  - name: quant-backtest-engineer
+    type: testing
+    description: Spécialiste du backtesting et validation de stratégies
+    capabilities:
+      - Framework de backtesting vectorisé
+      - Métriques de performance (Sharpe, Sortino, Calmar)
+      - Walk-forward analysis
+      - Monte Carlo simulations
+      - Slippage et coûts de transaction
+    priority: high
+
+  # Agent de gestion des risques
+  - name: quant-risk-manager
+    type: risk
+    description: Gestionnaire de risques pour trading algorithmique
+    capabilities:
+      - Value at Risk (VaR)
+      - Stress testing
+      - Portfolio optimization
+      - Risk parity
+      - Dynamic hedging
+    priority: critical
+
+  # Agent d'intégration exchange
+  - name: quant-exchange-integrator
+    type: infrastructure
+    description: Intégrateur de connexions aux exchanges crypto
+    capabilities:
+      - CCXT framework
+      - Binance API
+      - WebSocket streaming
+      - Order management
+      - Market data collection
+    priority: high
+
+  # Agent de monitoring production
+  - name: quant-production-monitor
+    type: monitoring
+    description: Surveillance des systèmes de trading en production
+    capabilities:
+      - Métriques temps réel
+      - Alertes de performance
+      - MLflow tracking
+      - Prometheus/Grafana
+      - Détection d'anomalies
+    priority: high
+
+  # Agent d'optimisation de performance
+  - name: quant-performance-optimizer
+    type: optimization
+    description: Optimisation des performances système et stratégies
+    capabilities:
+      - Vectorisation NumPy/Pandas
+      - Calcul parallèle
+      - Cache Redis
+      - Optimisation mémoire
+      - Profiling Python
+    priority: medium
+
+# Workflows spécifiques au projet QFrame
+workflows:
+  # Workflow de développement de stratégie
+  strategy_development:
+    name: "Développement de stratégie quantitative"
+    steps:
+      - native_agent: quant-web-researcher
+        task: "Rechercher l'état de l'art et les données disponibles"
+      - agent: quant-architect
+        task: "Concevoir l'architecture de la stratégie"
+      - agent: quant-strategy-developer
+        task: "Implémenter la logique de trading"
+      - agent: quant-ml-engineer
+        task: "Développer les modèles ML"
+      - agent: quant-backtest-engineer
+        task: "Valider par backtesting"
+      - agent: quant-risk-manager
+        task: "Analyser les risques"
+
+  # Workflow de feature engineering
+  feature_engineering:
+    name: "Pipeline de features quantitatives"
+    concurrent: true
+    steps:
+      - agent: quant-ml-engineer
+        task: "Créer les opérateurs symboliques"
+      - agent: quant-strategy-developer
+        task: "Implémenter les formules alpha"
+      - agent: quant-backtest-engineer
+        task: "Valider l'information coefficient"
+
+  # Workflow de mise en production
+  production_deployment:
+    name: "Déploiement en production"
+    steps:
+      - agent: quant-risk-manager
+        task: "Validation finale des risques"
+      - agent: quant-exchange-integrator
+        task: "Configurer les connexions exchange"
+      - agent: quant-production-monitor
+        task: "Mettre en place le monitoring"
+      - agent: quant-performance-optimizer
+        task: "Optimiser les performances"
+
+  # Workflow de debug trading
+  debug_trading_issue:
+    name: "Debug problème de trading"
+    steps:
+      - agent: quant-production-monitor
+        task: "Analyser les logs et métriques"
+      - agent: quant-backtest-engineer
+        task: "Reproduire le problème en backtest"
+      - agent: quant-strategy-developer
+        task: "Corriger la logique"
+      - agent: quant-risk-manager
+        task: "Valider la correction"
+
+  # Workflow d'optimisation ML
+  ml_optimization:
+    name: "Optimisation des modèles ML"
+    concurrent: true
+    steps:
+      - agent: quant-ml-engineer
+        task: "Hyperparameter tuning"
+      - agent: quant-backtest-engineer
+        task: "Validation croisée temporelle"
+      - agent: quant-performance-optimizer
+        task: "Optimiser l'inférence"
+
+# Commandes spécifiques QFrame
+commands:
+  # Backtesting
+  backtest:
+    description: "Lancer un backtest complet"
+    template: |
+      poetry run python scripts/backtest.py \
+        --strategy {strategy_name} \
+        --start {start_date} \
+        --end {end_date} \
+        --initial_capital 10000
+
+  # Feature generation
+  generate_features:
+    description: "Générer les features symboliques"
+    template: |
+      poetry run python -m qframe.features.symbolic_operators \
+        --data {data_path} \
+        --output {output_path}
+
+  # Strategy validation
+  validate_strategy:
+    description: "Valider une stratégie"
+    template: |
+      poetry run pytest tests/strategies/{strategy_name}_test.py \
+        --cov=qframe.strategies.{strategy_type} \
+        --cov-report=html
+
+  # MLflow experiment
+  ml_experiment:
+    description: "Lancer une expérience MLflow"
+    template: |
+      poetry run python scripts/ml_experiment.py \
+        --experiment {exp_name} \
+        --model {model_type} \
+        --params {params_file}
+
+  # Production monitoring
+  monitor_prod:
+    description: "Surveiller la production"
+    template: |
+      poetry run python -m qframe.infra.monitoring \
+        --dashboard \
+        --refresh-rate 1s
+
+# Intégrations spécifiques
+integrations:
+  - name: mlflow
+    enabled: true
+    tracking_uri: "http://localhost:5000"
+    default_experiment: "qframe-research"
+
+  - name: redis
+    enabled: true
+    host: "localhost"
+    port: 6379
+    db: 0
+
+  - name: postgresql
+    enabled: true
+    connection: "postgresql://user:pass@localhost/qframe"
+
+  - name: ccxt
+    enabled: true
+    exchanges:
+      - binance
+      - coinbase
+
+  - name: ta-lib
+    enabled: true
+    version: "0.4.28"
+
+# Hooks pour maintenir la qualité
+hooks:
+  pre_strategy_commit:
+    - command: "poetry run pytest tests/strategies/"
+    - command: "poetry run python scripts/validate_strategy.py"
+
+  post_backtest:
+    - command: "poetry run python scripts/generate_report.py"
+    - command: "poetry run python scripts/update_metrics.py"
+
+  pre_production:
+    - command: "poetry run python scripts/risk_check.py"
+    - command: "poetry run python scripts/performance_test.py"
+
+# Métriques de performance à surveiller
+metrics:
+  strategy_metrics:
+    - sharpe_ratio:
+        minimum: 1.0
+        target: 2.0
+    - max_drawdown:
+        maximum: 0.20
+        target: 0.10
+    - win_rate:
+        minimum: 0.55
+        target: 0.65
+
+  ml_metrics:
+    - information_coefficient:
+        minimum: 0.03
+        target: 0.05
+    - rank_ic:
+        minimum: 0.04
+        target: 0.07
+
+  system_metrics:
+    - latency_ms:
+        maximum: 100
+        target: 50
+    - memory_gb:
+        maximum: 8
+        target: 4
+
+# Configuration des environnements
+environments:
+  development:
+    testnet: true
+    paper_trading: true
+    log_level: DEBUG
+    data_source: "historical"
+
+  staging:
+    testnet: true
+    paper_trading: false
+    log_level: INFO
+    data_source: "live"
+
+  production:
+    testnet: false
+    paper_trading: false
+    log_level: WARNING
+    data_source: "live"
+    alerts: enabled
+
+# Templates de stratégies
+strategy_templates:
+  - name: "alpha_generator"
+    base: "qframe.strategies.research.base.AlphaStrategy"
+
+  - name: "ml_predictor"
+    base: "qframe.strategies.research.base.MLStrategy"
+
+  - name: "arbitrage"
+    base: "qframe.strategies.research.base.ArbitrageStrategy"
+
+# Messages personnalisés
+messages:
+  strategy_created: |
+    ✅ Stratégie {strategy_name} créée !
+    Prochaines étapes:
+    1. poetry run pytest tests/strategies/{strategy_name}_test.py
+    2. poetry run python scripts/backtest.py --strategy {strategy_name}
+    3. poetry run python scripts/optimize.py --strategy {strategy_name}
+
+  backtest_complete: |
+    📊 Backtest terminé !
+    Sharpe Ratio: {sharpe}
+    Max Drawdown: {max_dd}%
+    Win Rate: {win_rate}%
+    Total Return: {total_return}%
+
+  production_ready: |
+    🚀 Stratégie prête pour la production !
+    ✓ Tests passés
+    ✓ Risques validés
+    ✓ Performance optimisée
+    ✓ Monitoring configuré

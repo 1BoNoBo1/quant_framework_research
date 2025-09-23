@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # QFrame API Service
+  qframe-api:
+    build: .
+    ports:
+      - "8000:8000"
+      - "9090:9090"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://qframe:qframe@postgres:5432/qframe
+      - REDIS_URL=redis://redis:6379/0
+      - INFLUXDB_URL=http://influxdb:8086
+    depends_on:
+      - postgres
+      - redis
+      - influxdb
+    volumes:
+      - ./qframe:/app/qframe
+    networks:
+      - qframe-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=qframe
+      - POSTGRES_PASSWORD=qframe
+      - POSTGRES_DB=qframe
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - qframe-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - qframe-network
+
+  # InfluxDB Time-series Database
+  influxdb:
+    image: influxdb:2.7-alpine
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=qframe
+      - DOCKER_INFLUXDB_INIT_PASSWORD=qframepassword
+      - DOCKER_INFLUXDB_INIT_ORG=qframe
+      - DOCKER_INFLUXDB_INIT_BUCKET=market_data
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - qframe-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - qframe-network
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+    volumes:
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - qframe-network
+
+  # Jaeger Tracing (Optional)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+    networks:
+      - qframe-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  influxdb-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  qframe-network:
+    driver: bridge

@@ -1,0 +1,1073 @@
+---
+name: qframe-strategy-template
+type: quantitative-strategy-template
+description: Template complet pour créer des stratégies quantitatives dans QFrame
+version: 1.0.0
+
+# Structure d'une stratégie QFrame
+strategy_structure:
+  base_directory: "qframe/strategies/{category}/"
+  required_files:
+    - "__init__.py"
+    - "{strategy_name}_strategy.py"
+    - "{strategy_name}_config.py"
+    - "tests/test_{strategy_name}.py"
+    - "docs/{strategy_name}_documentation.md"
+    - "backtests/{strategy_name}_backtest.py"
+
+# Templates de code pour stratégies
+code_templates:
+  strategy_class:
+    file: "{strategy_name}_strategy.py"
+    content: |
+      """
+      {strategy_description}
+
+      Mathematical Foundation:
+      {mathematical_foundation}
+
+      Expected Performance:
+      - Sharpe Ratio: {expected_sharpe}
+      - Max Drawdown: {expected_drawdown}%
+      - Win Rate: {expected_win_rate}%
+      """
+
+      from typing import Dict, List, Optional, Tuple
+      import numpy as np
+      import pandas as pd
+      from dataclasses import dataclass
+      from datetime import datetime
+
+      from qframe.core.interfaces import IStrategy, IDataProvider, IRiskManager
+      from qframe.features.symbolic_operators import SymbolicOperators
+      from qframe.core.container import inject
+      from .{strategy_name}_config import {StrategyClass}Config
+
+      @dataclass
+      class {StrategyClass}Signal:
+          """Signal généré par la stratégie."""
+          timestamp: datetime
+          symbol: str
+          signal: float  # -1.0 à 1.0
+          confidence: float  # 0.0 à 1.0
+          metadata: Dict[str, float]
+
+      class {StrategyClass}(IStrategy):
+          """
+          {strategy_detailed_description}
+
+          Architecture:
+          - Feature Engineering: {feature_description}
+          - Signal Generation: {signal_description}
+          - Risk Management: {risk_description}
+          """
+
+          def __init__(
+              self,
+              data_provider: IDataProvider,
+              risk_manager: IRiskManager,
+              config: {StrategyClass}Config
+          ):
+              self.data_provider = data_provider
+              self.risk_manager = risk_manager
+              self.config = config
+              self.symbolic_ops = SymbolicOperators()
+              self._initialize_components()
+
+          def _initialize_components(self) -> None:
+              """Initialize strategy components."""
+              # Initialize feature processors
+              self._setup_feature_processors()
+
+              # Initialize ML models if any
+              self._setup_ml_models()
+
+              # Initialize technical indicators
+              self._setup_technical_indicators()
+
+              # Initialize risk controls
+              self._setup_risk_controls()
+
+          def _setup_feature_processors(self) -> None:
+              """Setup feature engineering pipeline."""
+              # Symbolic operators configuration
+              self.feature_config = {{
+                  'lookback_windows': self.config.feature_windows,
+                  'correlation_window': self.config.correlation_window,
+                  'volatility_window': self.config.volatility_window
+              }}
+
+          def _setup_ml_models(self) -> None:
+              """Setup machine learning models."""
+              # Model initialization
+              {ml_model_setup}
+
+          def _setup_technical_indicators(self) -> None:
+              """Setup technical analysis indicators."""
+              # Technical indicators configuration
+              {technical_indicators_setup}
+
+          def _setup_risk_controls(self) -> None:
+              """Setup risk management controls."""
+              # Risk parameters
+              self.risk_controls = {{
+                  'max_position_size': self.config.max_position_size,
+                  'stop_loss': self.config.stop_loss,
+                  'take_profit': self.config.take_profit,
+                  'max_drawdown': self.config.max_drawdown
+              }}
+
+          def generate_signals(
+              self,
+              market_data: pd.DataFrame,
+              current_positions: Optional[Dict[str, float]] = None
+          ) -> List[{StrategyClass}Signal]:
+              """
+              Generate trading signals based on market data.
+
+              Args:
+                  market_data: OHLCV data with required columns
+                  current_positions: Current portfolio positions
+
+              Returns:
+                  List of trading signals
+              """
+              try:
+                  # Step 1: Validate input data
+                  self._validate_market_data(market_data)
+
+                  # Step 2: Feature engineering
+                  features = self._engineer_features(market_data)
+
+                  # Step 3: Generate raw signals
+                  raw_signals = self._generate_raw_signals(features)
+
+                  # Step 4: Apply filters and risk management
+                  filtered_signals = self._apply_signal_filters(
+                      raw_signals, current_positions
+                  )
+
+                  # Step 5: Create signal objects
+                  strategy_signals = self._create_signal_objects(filtered_signals)
+
+                  return strategy_signals
+
+              except Exception as e:
+                  self._handle_signal_generation_error(e)
+                  return []
+
+          def _engineer_features(self, data: pd.DataFrame) -> pd.DataFrame:
+              """
+              Engineer features using symbolic operators and technical analysis.
+
+              Args:
+                  data: Raw OHLCV data
+
+              Returns:
+                  Enhanced feature dataframe
+              """
+              features = data.copy()
+
+              # Basic features
+              {basic_features_logic}
+
+              # Symbolic operator features
+              {symbolic_features_logic}
+
+              # Technical indicator features
+              {technical_features_logic}
+
+              # Cross-sectional features
+              {cross_sectional_features_logic}
+
+              # Time series features
+              {time_series_features_logic}
+
+              return features
+
+          def _generate_raw_signals(self, features: pd.DataFrame) -> pd.DataFrame:
+              """
+              Generate raw trading signals from features.
+
+              Args:
+                  features: Engineered features
+
+              Returns:
+                  Raw signals dataframe
+              """
+              signals = pd.DataFrame(index=features.index)
+
+              # Primary signal generation
+              {primary_signal_logic}
+
+              # Secondary signal validation
+              {secondary_signal_logic}
+
+              # Signal combination
+              {signal_combination_logic}
+
+              return signals
+
+          def _apply_signal_filters(
+              self,
+              signals: pd.DataFrame,
+              current_positions: Optional[Dict[str, float]]
+          ) -> pd.DataFrame:
+              """
+              Apply filters and risk management to signals.
+
+              Args:
+                  signals: Raw signals
+                  current_positions: Current portfolio positions
+
+              Returns:
+                  Filtered signals
+              """
+              filtered = signals.copy()
+
+              # Volatility filter
+              {volatility_filter_logic}
+
+              # Liquidity filter
+              {liquidity_filter_logic}
+
+              # Risk management filter
+              {risk_management_filter_logic}
+
+              # Position sizing
+              {position_sizing_logic}
+
+              return filtered
+
+          def _create_signal_objects(
+              self, signals: pd.DataFrame
+          ) -> List[{StrategyClass}Signal]:
+              """Create signal objects from dataframe."""
+              signal_objects = []
+
+              for timestamp, row in signals.iterrows():
+                  for symbol in row.index:
+                      if abs(row[symbol]) > self.config.signal_threshold:
+                          signal = {StrategyClass}Signal(
+                              timestamp=timestamp,
+                              symbol=symbol,
+                              signal=row[symbol],
+                              confidence=self._calculate_confidence(row, symbol),
+                              metadata=self._get_signal_metadata(row, symbol)
+                          )
+                          signal_objects.append(signal)
+
+              return signal_objects
+
+          def backtest(
+              self,
+              start_date: str,
+              end_date: str,
+              initial_capital: float = 100000,
+              benchmark: Optional[str] = None
+          ) -> Dict[str, float]:
+              """
+              Comprehensive backtesting of the strategy.
+
+              Args:
+                  start_date: Start date for backtest
+                  end_date: End date for backtest
+                  initial_capital: Starting capital
+                  benchmark: Benchmark symbol for comparison
+
+              Returns:
+                  Performance metrics dictionary
+              """
+              # Load historical data
+              historical_data = self.data_provider.get_historical_data(
+                  start_date=start_date,
+                  end_date=end_date,
+                  symbols=self.config.universe
+              )
+
+              # Initialize backtest state
+              backtest_state = self._initialize_backtest_state(initial_capital)
+
+              # Run backtest simulation
+              results = self._run_backtest_simulation(
+                  historical_data, backtest_state
+              )
+
+              # Calculate performance metrics
+              metrics = self._calculate_performance_metrics(
+                  results, benchmark
+              )
+
+              return metrics
+
+          def _calculate_performance_metrics(
+              self,
+              returns: pd.Series,
+              benchmark: Optional[str] = None
+          ) -> Dict[str, float]:
+              """Calculate comprehensive performance metrics."""
+
+              # Basic metrics
+              total_return = (returns + 1).prod() - 1
+              annualized_return = (1 + total_return) ** (252 / len(returns)) - 1
+              volatility = returns.std() * np.sqrt(252)
+              sharpe_ratio = annualized_return / volatility if volatility > 0 else 0
+
+              # Risk metrics
+              max_drawdown = self._calculate_max_drawdown(returns)
+              var_95 = returns.quantile(0.05)
+              sortino_ratio = self._calculate_sortino_ratio(returns)
+
+              # Advanced metrics
+              calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown != 0 else 0
+              win_rate = (returns > 0).mean()
+              profit_factor = self._calculate_profit_factor(returns)
+
+              metrics = {{
+                  'total_return': total_return,
+                  'annualized_return': annualized_return,
+                  'volatility': volatility,
+                  'sharpe_ratio': sharpe_ratio,
+                  'sortino_ratio': sortino_ratio,
+                  'calmar_ratio': calmar_ratio,
+                  'max_drawdown': max_drawdown,
+                  'var_95': var_95,
+                  'win_rate': win_rate,
+                  'profit_factor': profit_factor,
+                  'total_trades': len(returns),
+                  'avg_trade_return': returns.mean()
+              }}
+
+              # Benchmark comparison if provided
+              if benchmark:
+                  benchmark_metrics = self._calculate_benchmark_metrics(
+                      returns, benchmark
+                  )
+                  metrics.update(benchmark_metrics)
+
+              return metrics
+
+          def get_strategy_info(self) -> Dict[str, any]:
+              """Get strategy information and current state."""
+              return {{
+                  'name': '{strategy_name}',
+                  'type': '{strategy_type}',
+                  'version': self.config.version,
+                  'description': self.__doc__,
+                  'universe': self.config.universe,
+                  'parameters': self.config.dict(),
+                  'last_signal_time': getattr(self, 'last_signal_time', None),
+                  'is_active': getattr(self, 'is_active', False)
+              }}
+
+  strategy_config:
+    file: "{strategy_name}_config.py"
+    content: |
+      """
+      Configuration for {StrategyClass} strategy.
+      """
+
+      from typing import List, Dict, Optional
+      from pydantic import BaseModel, Field, validator
+      from decimal import Decimal
+
+      class {StrategyClass}Config(BaseModel):
+          """Configuration parameters for {StrategyClass}."""
+
+          # Strategy identification
+          name: str = "{strategy_name}"
+          version: str = "1.0.0"
+          description: str = "{strategy_description}"
+
+          # Universe and timeframe
+          universe: List[str] = Field(
+              default=[{default_universe}],
+              description="Trading universe symbols"
+          )
+          timeframe: str = Field(
+              default="{default_timeframe}",
+              description="Strategy timeframe"
+          )
+
+          # Signal generation parameters
+          signal_threshold: float = Field(
+              default={signal_threshold},
+              ge=0.0,
+              le=1.0,
+              description="Minimum signal strength threshold"
+          )
+          confidence_threshold: float = Field(
+              default={confidence_threshold},
+              ge=0.0,
+              le=1.0,
+              description="Minimum confidence threshold"
+          )
+
+          # Feature engineering parameters
+          feature_windows: List[int] = Field(
+              default={feature_windows},
+              description="Lookback windows for features"
+          )
+          correlation_window: int = Field(
+              default={correlation_window},
+              gt=0,
+              description="Window for correlation calculations"
+          )
+          volatility_window: int = Field(
+              default={volatility_window},
+              gt=0,
+              description="Window for volatility calculations"
+          )
+
+          # Risk management parameters
+          max_position_size: float = Field(
+              default={max_position_size},
+              gt=0.0,
+              le=1.0,
+              description="Maximum position size as fraction of portfolio"
+          )
+          stop_loss: Optional[float] = Field(
+              default={stop_loss},
+              gt=0.0,
+              description="Stop loss threshold"
+          )
+          take_profit: Optional[float] = Field(
+              default={take_profit},
+              gt=0.0,
+              description="Take profit threshold"
+          )
+          max_drawdown: float = Field(
+              default={max_drawdown},
+              gt=0.0,
+              le=1.0,
+              description="Maximum allowed drawdown"
+          )
+
+          # ML model parameters (if applicable)
+          model_params: Dict[str, any] = Field(
+              default_factory=dict,
+              description="ML model hyperparameters"
+          )
+
+          # Backtesting parameters
+          transaction_cost: float = Field(
+              default={transaction_cost},
+              ge=0.0,
+              description="Transaction cost per trade"
+          )
+          slippage: float = Field(
+              default={slippage},
+              ge=0.0,
+              description="Expected slippage"
+          )
+
+          @validator('universe')
+          def validate_universe(cls, v):
+              """Validate trading universe."""
+              if not v or len(v) == 0:
+                  raise ValueError("Universe cannot be empty")
+              return v
+
+          @validator('feature_windows')
+          def validate_windows(cls, v):
+              """Validate feature windows."""
+              if not all(w > 0 for w in v):
+                  raise ValueError("All windows must be positive")
+              return sorted(set(v))  # Remove duplicates and sort
+
+          class Config:
+              """Pydantic configuration."""
+              validate_assignment = True
+              extra = "forbid"
+
+  backtest_template:
+    file: "backtests/{strategy_name}_backtest.py"
+    content: |
+      """
+      Backtesting script for {StrategyClass} strategy.
+      """
+
+      import sys
+      import argparse
+      from pathlib import Path
+      from datetime import datetime, timedelta
+      import pandas as pd
+      import numpy as np
+      import matplotlib.pyplot as plt
+      import seaborn as sns
+
+      # Add project root to path
+      project_root = Path(__file__).parent.parent.parent
+      sys.path.append(str(project_root))
+
+      from qframe.core.container import get_container
+      from qframe.core.config import get_config
+      from qframe.strategies.{strategy_category}.{strategy_name}_strategy import {StrategyClass}
+      from qframe.strategies.{strategy_category}.{strategy_name}_config import {StrategyClass}Config
+
+      class {StrategyClass}Backtester:
+          """Comprehensive backtesting for {StrategyClass}."""
+
+          def __init__(self, config: {StrategyClass}Config):
+              self.config = config
+              self.container = get_container()
+              self.strategy = self.container.resolve({StrategyClass})
+
+          def run_single_backtest(
+              self,
+              start_date: str,
+              end_date: str,
+              initial_capital: float = 100000
+          ) -> Dict[str, any]:
+              """Run a single backtest."""
+              print(f"Running backtest from {{start_date}} to {{end_date}}")
+
+              results = self.strategy.backtest(
+                  start_date=start_date,
+                  end_date=end_date,
+                  initial_capital=initial_capital
+              )
+
+              self._print_results(results)
+              return results
+
+          def run_walk_forward_analysis(
+              self,
+              start_date: str,
+              end_date: str,
+              train_period_months: int = 12,
+              test_period_months: int = 3,
+              step_months: int = 1
+          ) -> pd.DataFrame:
+              """Run walk-forward analysis."""
+              print("Running walk-forward analysis...")
+
+              results = []
+              current_date = pd.to_datetime(start_date)
+              end_date_dt = pd.to_datetime(end_date)
+
+              while current_date < end_date_dt:
+                  # Define train and test periods
+                  train_start = current_date
+                  train_end = current_date + timedelta(days=train_period_months * 30)
+                  test_start = train_end
+                  test_end = train_end + timedelta(days=test_period_months * 30)
+
+                  if test_end > end_date_dt:
+                      break
+
+                  # Run backtest for this period
+                  period_results = self.strategy.backtest(
+                      start_date=test_start.strftime('%Y-%m-%d'),
+                      end_date=test_end.strftime('%Y-%m-%d')
+                  )
+
+                  period_results['period_start'] = test_start
+                  period_results['period_end'] = test_end
+                  results.append(period_results)
+
+                  # Move to next period
+                  current_date += timedelta(days=step_months * 30)
+
+              return pd.DataFrame(results)
+
+          def run_monte_carlo_simulation(
+              self,
+              start_date: str,
+              end_date: str,
+              num_simulations: int = 1000,
+              bootstrap_block_size: int = 252
+          ) -> Dict[str, any]:
+              """Run Monte Carlo simulation."""
+              print(f"Running {{num_simulations}} Monte Carlo simulations...")
+
+              # Get base backtest results
+              base_results = self.strategy.backtest(start_date, end_date)
+
+              # Extract returns for bootstrapping
+              # This would need actual implementation based on your data structure
+
+              simulation_results = []
+              for i in range(num_simulations):
+                  # Bootstrap returns and calculate metrics
+                  # Implementation depends on your specific needs
+                  pass
+
+              return {{
+                  'base_results': base_results,
+                  'simulation_results': simulation_results,
+                  'confidence_intervals': self._calculate_confidence_intervals(simulation_results)
+              }}
+
+          def generate_backtest_report(
+              self,
+              results: Dict[str, any],
+              output_path: str = "backtest_report.html"
+          ) -> None:
+              """Generate comprehensive backtest report."""
+              # Create visualizations
+              self._create_performance_charts(results)
+
+              # Generate HTML report
+              self._generate_html_report(results, output_path)
+
+              print(f"Report generated: {{output_path}}")
+
+          def _print_results(self, results: Dict[str, any]) -> None:
+              """Print backtest results."""
+              print("\\n" + "="*50)
+              print(f"{{self.config.name}} Backtest Results")
+              print("="*50)
+
+              for metric, value in results.items():
+                  if isinstance(value, float):
+                      if 'ratio' in metric or 'return' in metric:
+                          print(f"{{metric.replace('_', ' ').title()}}: {{value:.4f}}")
+                      elif 'drawdown' in metric or 'var' in metric:
+                          print(f"{{metric.replace('_', ' ').title()}}: {{value:.2%}}")
+                      else:
+                          print(f"{{metric.replace('_', ' ').title()}}: {{value:.2f}}")
+                  else:
+                      print(f"{{metric.replace('_', ' ').title()}}: {{value}}")
+
+          def _create_performance_charts(self, results: Dict[str, any]) -> None:
+              """Create performance visualization charts."""
+              # This would create various charts like:
+              # - Cumulative returns
+              # - Drawdown chart
+              # - Rolling Sharpe ratio
+              # - Monthly returns heatmap
+              pass
+
+          def _generate_html_report(
+              self,
+              results: Dict[str, any],
+              output_path: str
+          ) -> None:
+              """Generate HTML report."""
+              # Implementation for HTML report generation
+              pass
+
+      def main():
+          """Main entry point for backtesting."""
+          parser = argparse.ArgumentParser(description='Backtest {StrategyClass}')
+
+          parser.add_argument('--start-date', required=True, help='Start date (YYYY-MM-DD)')
+          parser.add_argument('--end-date', required=True, help='End date (YYYY-MM-DD)')
+          parser.add_argument('--capital', type=float, default=100000, help='Initial capital')
+          parser.add_argument('--walk-forward', action='store_true', help='Run walk-forward analysis')
+          parser.add_argument('--monte-carlo', action='store_true', help='Run Monte Carlo simulation')
+          parser.add_argument('--report', action='store_true', help='Generate HTML report')
+
+          args = parser.parse_args()
+
+          # Load configuration
+          config = {StrategyClass}Config()
+          backtester = {StrategyClass}Backtester(config)
+
+          if args.walk_forward:
+              results = backtester.run_walk_forward_analysis(
+                  args.start_date, args.end_date
+              )
+          elif args.monte_carlo:
+              results = backtester.run_monte_carlo_simulation(
+                  args.start_date, args.end_date
+              )
+          else:
+              results = backtester.run_single_backtest(
+                  args.start_date, args.end_date, args.capital
+              )
+
+          if args.report:
+              backtester.generate_backtest_report(results)
+
+      if __name__ == "__main__":
+          main()
+
+  test_template:
+    file: "tests/test_{strategy_name}.py"
+    content: |
+      """
+      Tests for {StrategyClass} strategy.
+      """
+
+      import pytest
+      import pandas as pd
+      import numpy as np
+      from datetime import datetime, timedelta
+      from unittest.mock import Mock, patch
+
+      from qframe.strategies.{strategy_category}.{strategy_name}_strategy import {StrategyClass}
+      from qframe.strategies.{strategy_category}.{strategy_name}_config import {StrategyClass}Config
+
+      class Test{StrategyClass}:
+          """Test suite for {StrategyClass}."""
+
+          @pytest.fixture
+          def strategy_config(self):
+              """Create test configuration."""
+              return {StrategyClass}Config(
+                  universe=["BTC/USDT", "ETH/USDT"],
+                  signal_threshold=0.1,
+                  max_position_size=0.1
+              )
+
+          @pytest.fixture
+          def mock_data_provider(self):
+              """Create mock data provider."""
+              mock_provider = Mock()
+
+              # Sample OHLCV data
+              dates = pd.date_range('2023-01-01', periods=100, freq='1H')
+              mock_data = pd.DataFrame({{
+                  'open': np.random.randn(100).cumsum() + 100,
+                  'high': np.random.randn(100).cumsum() + 102,
+                  'low': np.random.randn(100).cumsum() + 98,
+                  'close': np.random.randn(100).cumsum() + 100,
+                  'volume': np.random.randn(100) * 1000
+              }}, index=dates)
+
+              mock_provider.get_historical_data.return_value = mock_data
+              return mock_provider
+
+          @pytest.fixture
+          def mock_risk_manager(self):
+              """Create mock risk manager."""
+              mock_risk = Mock()
+              mock_risk.validate_position.return_value = True
+              mock_risk.calculate_position_size.return_value = 0.05
+              return mock_risk
+
+          @pytest.fixture
+          def strategy(self, strategy_config, mock_data_provider, mock_risk_manager):
+              """Create strategy instance for testing."""
+              return {StrategyClass}(
+                  data_provider=mock_data_provider,
+                  risk_manager=mock_risk_manager,
+                  config=strategy_config
+              )
+
+          def test_strategy_initialization(self, strategy):
+              """Test strategy initialization."""
+              assert strategy.config.name == "{strategy_name}"
+              assert len(strategy.config.universe) == 2
+              assert hasattr(strategy, 'symbolic_ops')
+
+          def test_signal_generation(self, strategy, mock_data_provider):
+              """Test signal generation."""
+              # Create test market data
+              test_data = pd.DataFrame({{
+                  'open': [100, 101, 102],
+                  'high': [102, 103, 104],
+                  'low': [99, 100, 101],
+                  'close': [101, 102, 103],
+                  'volume': [1000, 1100, 1200]
+              }})
+
+              signals = strategy.generate_signals(test_data)
+
+              assert isinstance(signals, list)
+              # Add more specific assertions based on your strategy logic
+
+          def test_feature_engineering(self, strategy):
+              """Test feature engineering pipeline."""
+              # Create test data
+              test_data = pd.DataFrame({{
+                  'open': np.random.randn(50).cumsum() + 100,
+                  'high': np.random.randn(50).cumsum() + 102,
+                  'low': np.random.randn(50).cumsum() + 98,
+                  'close': np.random.randn(50).cumsum() + 100,
+                  'volume': np.random.randn(50) * 1000
+              }})
+
+              features = strategy._engineer_features(test_data)
+
+              assert isinstance(features, pd.DataFrame)
+              assert len(features) == len(test_data)
+              # Add assertions for specific features
+
+          def test_backtest_functionality(self, strategy):
+              """Test backtesting functionality."""
+              results = strategy.backtest(
+                  start_date='2023-01-01',
+                  end_date='2023-02-01',
+                  initial_capital=10000
+              )
+
+              assert isinstance(results, dict)
+              assert 'sharpe_ratio' in results
+              assert 'max_drawdown' in results
+              assert 'total_return' in results
+
+          def test_risk_management_integration(self, strategy, mock_risk_manager):
+              """Test risk management integration."""
+              test_data = pd.DataFrame({{
+                  'open': [100, 101, 102],
+                  'high': [102, 103, 104],
+                  'low': [99, 100, 101],
+                  'close': [101, 102, 103],
+                  'volume': [1000, 1100, 1200]
+              }})
+
+              strategy.generate_signals(test_data)
+
+              # Verify risk manager was called
+              assert mock_risk_manager.validate_position.called
+
+          def test_configuration_validation(self):
+              """Test configuration validation."""
+              # Test valid configuration
+              valid_config = {StrategyClass}Config(
+                  universe=["BTC/USDT"],
+                  signal_threshold=0.1
+              )
+              assert valid_config.name == "{strategy_name}"
+
+              # Test invalid configuration
+              with pytest.raises(ValueError):
+                  {StrategyClass}Config(
+                      universe=[],  # Empty universe should fail
+                      signal_threshold=0.1
+                  )
+
+          def test_performance_metrics_calculation(self, strategy):
+              """Test performance metrics calculation."""
+              # Create mock returns
+              returns = pd.Series(np.random.randn(100) * 0.01)
+
+              metrics = strategy._calculate_performance_metrics(returns)
+
+              assert 'sharpe_ratio' in metrics
+              assert 'max_drawdown' in metrics
+              assert 'win_rate' in metrics
+              assert isinstance(metrics['sharpe_ratio'], (int, float))
+
+          @pytest.mark.parametrize("signal_threshold,expected_signals", [
+              (0.1, "at_least_one"),
+              (0.9, "very_few"),
+          ])
+          def test_signal_threshold_impact(
+              self,
+              strategy,
+              signal_threshold,
+              expected_signals
+          ):
+              """Test impact of signal threshold on signal generation."""
+              strategy.config.signal_threshold = signal_threshold
+
+              test_data = pd.DataFrame({{
+                  'open': [100, 101, 102],
+                  'high': [102, 103, 104],
+                  'low': [99, 100, 101],
+                  'close': [101, 102, 103],
+                  'volume': [1000, 1100, 1200]
+              }})
+
+              signals = strategy.generate_signals(test_data)
+
+              if expected_signals == "very_few":
+                  assert len(signals) <= 1
+              # Add more specific assertions
+
+          def test_error_handling(self, strategy):
+              """Test error handling in signal generation."""
+              # Test with invalid data
+              invalid_data = pd.DataFrame()
+
+              signals = strategy.generate_signals(invalid_data)
+              assert signals == []  # Should return empty list on error
+
+# Templates de documentation
+documentation_templates:
+  strategy_documentation:
+    file: "docs/{strategy_name}_documentation.md"
+    content: |
+      # {StrategyClass} Documentation
+
+      ## Overview
+
+      {strategy_detailed_description}
+
+      ## Mathematical Foundation
+
+      ### Signal Generation Formula
+
+      ```
+      {mathematical_formula}
+      ```
+
+      ### Risk Management Rules
+
+      {risk_management_rules}
+
+      ## Implementation Details
+
+      ### Feature Engineering
+
+      The strategy uses the following features:
+
+      1. **Price Features**: {price_features}
+      2. **Volume Features**: {volume_features}
+      3. **Technical Indicators**: {technical_indicators}
+      4. **Symbolic Operators**: {symbolic_operators}
+
+      ### Model Architecture
+
+      {model_architecture_description}
+
+      ## Performance Characteristics
+
+      ### Expected Performance
+
+      - **Sharpe Ratio**: {expected_sharpe}
+      - **Maximum Drawdown**: {expected_drawdown}%
+      - **Win Rate**: {expected_win_rate}%
+      - **Average Trade Duration**: {avg_trade_duration}
+
+      ### Risk Profile
+
+      - **Market Beta**: {market_beta}
+      - **Volatility**: {expected_volatility}%
+      - **Value at Risk (95%)**: {var_95}%
+
+      ## Usage Examples
+
+      ### Basic Usage
+
+      ```python
+      from qframe.strategies.{strategy_category} import {StrategyClass}
+      from qframe.core.container import get_container
+
+      # Get strategy instance
+      container = get_container()
+      strategy = container.resolve({StrategyClass})
+
+      # Generate signals
+      signals = strategy.generate_signals(market_data)
+      ```
+
+      ### Backtesting
+
+      ```python
+      # Run backtest
+      results = strategy.backtest(
+          start_date='2023-01-01',
+          end_date='2023-12-31',
+          initial_capital=100000
+      )
+
+      print(f"Sharpe Ratio: {{results['sharpe_ratio']:.2f}}")
+      print(f"Max Drawdown: {{results['max_drawdown']:.2%}}")
+      ```
+
+      ## Configuration Parameters
+
+      | Parameter | Type | Default | Description |
+      |-----------|------|---------|-------------|
+      {configuration_table}
+
+      ## Monitoring and Alerts
+
+      ### Key Metrics to Monitor
+
+      - Signal generation frequency
+      - Position concentration
+      - Portfolio correlation
+      - Risk metrics drift
+
+      ### Alert Conditions
+
+      - Sharpe ratio < {min_sharpe_alert}
+      - Drawdown > {max_drawdown_alert}%
+      - Signal count deviation > {signal_deviation_alert}%
+
+      ## Troubleshooting
+
+      ### Common Issues
+
+      1. **No signals generated**: Check signal threshold and data quality
+      2. **High drawdown**: Review risk management parameters
+      3. **Low Sharpe ratio**: Validate feature engineering pipeline
+
+      ### Debug Mode
+
+      ```python
+      # Enable debug logging
+      import logging
+      logging.getLogger('qframe.strategies.{strategy_name}').setLevel(logging.DEBUG)
+      ```
+
+      ## References
+
+      {references}
+
+      ## Changelog
+
+      ### Version 1.0.0
+      - Initial implementation
+      - Basic signal generation
+      - Risk management integration
+
+# Configuration des variables pour les templates
+template_variables:
+  # Variables par défaut
+  default_variables:
+    strategy_category: "research"
+    strategy_type: "alpha_generator"
+    signal_threshold: 0.05
+    confidence_threshold: 0.6
+    max_position_size: 0.1
+    stop_loss: 0.02
+    take_profit: 0.05
+    max_drawdown: 0.15
+    transaction_cost: 0.001
+    slippage: 0.0005
+    feature_windows: "[5, 10, 20, 50]"
+    correlation_window: 60
+    volatility_window: 20
+    default_timeframe: "1h"
+    default_universe: '"BTC/USDT", "ETH/USDT"'
+
+  # Variables spécifiques par type de stratégie
+  strategy_specific:
+    mean_reversion:
+      expected_sharpe: 1.8
+      expected_drawdown: 12
+      expected_win_rate: 58
+
+    momentum:
+      expected_sharpe: 1.5
+      expected_drawdown: 18
+      expected_win_rate: 52
+
+    arbitrage:
+      expected_sharpe: 2.2
+      expected_drawdown: 8
+      expected_win_rate: 65
+
+    ml_predictor:
+      expected_sharpe: 1.6
+      expected_drawdown: 15
+      expected_win_rate: 55
+
+# Commandes pour utiliser les templates
+usage_commands:
+  create_strategy:
+    command: "qframe create strategy"
+    description: "Créer une nouvelle stratégie à partir du template"
+    parameters:
+      - name: "Nom de la stratégie"
+      - category: "Catégorie (research/production/hybrid)"
+      - type: "Type de stratégie"
+
+  generate_backtest:
+    command: "qframe generate backtest"
+    description: "Générer un script de backtesting"
+    parameters:
+      - strategy_name: "Nom de la stratégie existante"
+
+  create_tests:
+    command: "qframe create tests"
+    description: "Générer les tests unitaires"
+    parameters:
+      - strategy_name: "Nom de la stratégie"

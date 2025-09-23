@@ -1,0 +1,200 @@
+# Configuration Testing
+# =====================
+# Configuration spécifique aux tests automatisés
+
+# App en mode test
+app:
+  debug: true
+  testing: true
+
+# Logging minimal pour les tests
+logging:
+  level: "WARNING"  # Réduire le bruit pendant les tests
+  handlers:
+    - console
+  format: "%(levelname)s - %(message)s"
+
+# Base de données en mémoire pour tests
+database:
+  engine: "sqlite"
+  name: ":memory:"  # Base de données en mémoire
+  echo: false
+  pool_size: 1
+  max_overflow: 0
+
+# Redis de test
+redis:
+  db: 15  # Dernière DB pour tests
+  max_connections: 5
+
+# API de test
+api:
+  debug: true
+  port: 8001  # Port différent pour éviter conflits
+  cors:
+    enabled: false  # Pas de CORS en test
+
+# MLflow de test
+mlflow:
+  tracking_uri: "file:./test_mlruns"
+  experiment_name: "qframe_tests"
+
+# Pas de monitoring en test
+monitoring:
+  enabled: false
+
+# Pas d'alertes en test
+alerts:
+  enabled: false
+
+# Trading en mode simulation totale
+trading:
+  testnet: true
+  simulation_mode: true
+  min_order_size: 0.1
+  max_order_size: 100.0
+  order_timeout: 10  # Timeout court pour tests rapides
+
+# Toutes les stratégies désactivées par défaut en test
+strategies:
+  dmn_lstm:
+    enabled: false
+  mean_reversion:
+    enabled: false
+  funding_arbitrage:
+    enabled: false
+
+# Risque minimal pour tests
+risk_management:
+  max_portfolio_risk: 0.01
+  drawdown_limit: 0.05
+  default_stop_loss: 0.01
+  default_take_profit: 0.02
+
+# Backtesting rapide
+backtesting:
+  initial_capital: 1000.0
+  commission: 0.0
+  slippage: 0.0
+
+# Performance optimisée pour tests
+performance:
+  max_workers: 1  # Single thread pour tests déterministes
+  cache_ttl: 0  # Pas de cache en test
+  chunk_size: 100
+  parallel_processing: false
+
+# Sécurité simplifiée pour tests
+security:
+  jwt_expire_minutes: 5  # Très court pour tests
+  rate_limiting:
+    enabled: false
+
+# Data providers simulés
+data_providers:
+  mock:
+    name: "mock_provider"
+    enabled: true
+    deterministic: true  # Données prévisibles
+    symbols:
+      - "TEST/USDT"
+      - "MOCK/USDT"
+
+# Configuration spécifique aux tests
+test_config:
+  # Mode rapide: skip certains tests longs
+  fast_mode: true
+
+  # Nettoyage automatique après tests
+  auto_cleanup: true
+
+  # Mock des services externes
+  mock_external_services: true
+
+  # Données de test déterministes
+  deterministic_data: true
+
+  # Timeout pour tests
+  default_timeout: 10
+
+  # Parallélisation des tests
+  parallel_tests: false
+
+  # Coverage minimal requis
+  min_coverage: 80
+
+  # Répertoires de test
+  test_directories:
+    - "tests"
+
+  # Patterns de fichiers de test
+  test_patterns:
+    - "test_*.py"
+    - "*_test.py"
+
+  # Fixtures communes
+  fixtures:
+    sample_data_size: 100
+    mock_prices: true
+    fake_time_series: true
+
+# Fixtures et données de test
+fixtures:
+  strategies:
+    test_strategy:
+      name: "Test Strategy"
+      strategy_type: "mean_reversion"
+      universe: ["TEST/USDT"]
+      max_position_size: 0.1
+      max_positions: 1
+
+  market_data:
+    symbols: ["TEST/USDT", "MOCK/USDT"]
+    periods: 100
+    volatility: 0.01
+
+  portfolios:
+    test_portfolio:
+      initial_capital: 1000.0
+      base_currency: "USDT"
+
+# Mocks et stubs
+mocks:
+  # Services externes à mocker
+  external_services:
+    - "market_data_service"
+    - "broker_service"
+    - "email_service"
+    - "slack_service"
+
+  # APIs externes
+  external_apis:
+    - "binance_api"
+    - "yahoo_finance"
+
+  # Système de fichiers
+  filesystem:
+    use_temp_dirs: true
+    cleanup_after_test: true
+
+# Environnement de test isolé
+isolation:
+  # Variables d'environnement à nettoyer
+  clean_env_vars:
+    - "QFRAME_DB_PASSWORD"
+    - "QFRAME_API_SECRET"
+
+  # Répertoires temporaires
+  temp_directories:
+    - "test_data"
+    - "test_logs"
+    - "test_artifacts"
+
+  # Nettoyage automatique
+  auto_cleanup: true
+
+# Assertions et validations
+assertions:
+  strict_mode: true
+  validate_types: true
+  check_invariants: true

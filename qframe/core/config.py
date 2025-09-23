@@ -185,6 +185,10 @@ class FrameworkConfig(BaseSettings):
     app_version: str = "2.0.0"
     environment: Environment = Environment.DEVELOPMENT
 
+    # Configuration multi-environnement
+    use_environment_config: bool = True
+    config_dir: Optional[str] = None
+
     # Chemins
     project_root: Path = Field(default_factory=lambda: Path(__file__).parent.parent.parent)
     data_dir: Path = Field(default_factory=lambda: Path("data"))
@@ -395,3 +399,83 @@ def get_config_for_environment(env: str) -> FrameworkConfig:
     except ValueError:
         # Environnement inconnu, retourne config de base
         return FrameworkConfig()
+
+
+def load_environment_config(config_dir: Optional[str] = None, environment: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Charge la configuration depuis le nouveau système multi-environnement.
+
+    Args:
+        config_dir: Répertoire des fichiers de configuration
+        environment: Environnement à charger
+
+    Returns:
+        Configuration complète chargée
+    """
+    try:
+        from ..infrastructure.config.environment_config import get_configuration_manager
+
+        manager = get_configuration_manager(config_dir, environment)
+        return manager.get_config()
+    except ImportError:
+        logger.warning("⚠️ Nouveau système de configuration non disponible, utilisation du système legacy")
+        return {}
+
+
+def get_enhanced_config(config_dir: Optional[str] = None, environment: Optional[str] = None) -> FrameworkConfig:
+    """
+    Retourne une configuration enrichie combinant l'ancien et le nouveau système.
+
+    Args:
+        config_dir: Répertoire des fichiers de configuration
+        environment: Environnement à charger
+
+    Returns:
+        Configuration enrichie
+    """
+    # Charger la configuration de base
+    base_config = get_config()
+
+    # Si le nouveau système est disponible, enrichir avec ses données
+    if base_config.use_environment_config:
+        try:
+            env_config = load_environment_config(config_dir, environment)
+
+            # Fusionner les configurations
+            if env_config:
+                # Mettre à jour quelques champs clés depuis la config environnement
+                app_config = env_config.get("app", {})
+                if app_config.get("name"):
+                    base_config.app_name = app_config["name"]
+
+                logging_config = env_config.get("logging", {})
+                if logging_config.get("level"):
+                    base_config.log_level = LogLevel(logging_config["level"])
+
+                # Ajouter une référence à la config complète
+                setattr(base_config, '_environment_config', env_config)
+
+        except Exception as e:
+            logger.warning(f"⚠️ Erreur chargement configuration environnement: {e}")
+
+    return base_config
+
+
+def is_feature_enabled_legacy(feature_name: str) -> bool:
+    """
+    Vérifie si une feature est activée via le nouveau système.
+
+    Args:
+        feature_name: Nom de la feature
+
+    Returns:
+        True si activée, False sinon
+    """
+    try:
+        from ..infrastructure.config.environment_config import is_feature_enabled
+        return is_feature_enabled(feature_name)
+    except ImportError:
+        # Fallback: toujours activé si le nouveau système n'est pas disponible
+        return True
+    except Exception:
+        return False

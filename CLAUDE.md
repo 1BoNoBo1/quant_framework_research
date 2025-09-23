@@ -408,3 +408,4 @@ poetry run python -m qframe.features.symbolic_operators
 5. **Innover** en préservant la sophistication de recherche existante
 
 Le framework est conçu pour **l'autonomie financière via la recherche quantitative**, en combinant innovation académique et qualité professionnelle. Chaque décision technique sert cet objectif ultime.
+- les donnees des marchés crypto seront recuperer soit par un framework soit par ccxt.

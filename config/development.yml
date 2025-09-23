@@ -1,0 +1,130 @@
+# Configuration Développement
+# ===========================
+# Configuration spécifique à l'environnement de développement
+
+# Override des paramètres de l'app
+app:
+  debug: true
+
+# Logging plus verbeux en développement
+logging:
+  level: "DEBUG"
+  handlers:
+    - console
+  # Pas de fichier log en dev pour simplicité
+
+# Base de données locale
+database:
+  name: "qframe_dev"
+  echo: true  # Afficher les requêtes SQL
+  pool_size: 5
+  max_overflow: 10
+
+# Redis local
+redis:
+  db: 1  # DB différente pour éviter conflits
+
+# API en mode développement
+api:
+  debug: true
+  reload: true  # Auto-reload pour développement
+  port: 8000
+  cors:
+    origins:
+      - "http://localhost:3000"
+      - "http://localhost:3001"
+      - "http://localhost:8080"
+      - "http://127.0.0.1:3000"
+
+# MLflow local
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: "qframe_dev"
+
+# Monitoring simplifié
+monitoring:
+  metrics:
+    port: 9091
+
+# Pas d'alertes en développement
+alerts:
+  enabled: false
+
+# Trading en mode test
+trading:
+  testnet: true
+  min_order_size: 1.0  # Plus petit pour tests
+  max_order_size: 1000.0
+
+# Stratégies en mode expérimental
+strategies:
+  dmn_lstm:
+    enabled: true
+    position_size: 0.01  # Plus petit pour tests
+  mean_reversion:
+    enabled: true
+    position_size: 0.008
+  funding_arbitrage:
+    enabled: true  # Activé pour tests
+    position_size: 0.005
+
+# Risque réduit pour développement
+risk_management:
+  max_portfolio_risk: 0.05
+  drawdown_limit: 0.1
+  default_stop_loss: 0.02
+  default_take_profit: 0.05
+
+# Backtesting avec capital réduit
+backtesting:
+  initial_capital: 10000.0
+
+# Performance adaptée au développement
+performance:
+  max_workers: 2
+  cache_ttl: 600  # Cache plus court
+
+# Sécurité relâchée pour développement
+security:
+  jwt_expire_minutes: 480  # 8 heures
+  rate_limiting:
+    enabled: false  # Pas de rate limiting en dev
+
+# Data providers en mode développement
+data_providers:
+  binance:
+    # Utiliser testnet
+    base_url: "https://testnet.binance.vision"
+    rate_limit: 100  # Plus bas pour éviter spam
+  simulation:
+    name: "simulation"
+    enabled: true
+    symbols:
+      - "BTC/USDT"
+      - "ETH/USDT"
+      - "BNB/USDT"
+    price_volatility: 0.02
+
+# Fonctionnalités spécifiques au développement
+dev_tools:
+  mock_data_generation: true
+  debug_endpoints: true
+  performance_profiling: true
+  test_data_cleanup: true
+
+# Configuration des tests
+testing:
+  auto_cleanup: true
+  mock_external_services: true
+  fast_mode: true
+
+# Hot reload et développement
+hot_reload:
+  enabled: true
+  watch_directories:
+    - "qframe"
+    - "config"
+  exclude_patterns:
+    - "*.pyc"
+    - "__pycache__"
+    - ".git"
