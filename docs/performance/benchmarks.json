@@ -1,0 +1,45 @@
+{
+  "performance": {
+    "timestamp": "2025-09-29T13:37:20.860618",
+    "framework_version": "0.1.0",
+    "python_version": "3.13.3 (main, Aug 14 2025, 11:53:40) [GCC 14.2.0]",
+    "benchmarks": {
+      "framework_import": {
+        "time_seconds": 0.6921923160552979,
+        "status": "success",
+        "description": "Temps d'import du framework core"
+      },
+      "di_container_creation": {
+        "time_seconds": 2.0555455684661865,
+        "status": "success",
+        "description": "Temps de cr\u00e9ation du container DI"
+      },
+      "config_loading": {
+        "time_seconds": 4.5299530029296875e-06,
+        "status": "success",
+        "description": "Temps de chargement configuration"
+      },
+      "strategy_resolution": {
+        "time_seconds": 0,
+        "status": "error",
+        "error": "Service DataProvider not registered",
+        "description": "Temps de r\u00e9solution strat\u00e9gie Mean Reversion"
+      }
+    }
+  },
+  "memory": {
+    "initial_memory_mb": 746.16015625,
+    "benchmarks": {
+      "after_imports": {
+        "memory_mb": 746.16015625,
+        "delta_mb": 0.0,
+        "description": "M\u00e9moire apr\u00e8s imports core"
+      },
+      "after_container": {
+        "memory_mb": 746.16015625,
+        "delta_mb": 0.0,
+        "description": "M\u00e9moire apr\u00e8s cr\u00e9ation container"
+      }
+    }
+  }
+}

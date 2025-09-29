@@ -165,6 +165,7 @@ from ..observability.dashboard import ObservabilityDashboard
 from ..data.market_data_pipeline import MarketDataPipeline, MockDataProvider
 from ..data.binance_provider import BinanceProvider
 from ..data.coinbase_provider import CoinbaseProvider
+from ..data.ccxt_provider import CCXTProvider, CCXTProviderFactory
 from ..data.real_time_streaming import RealTimeStreamingService
 
 # Event-Driven Architecture Infrastructure
@@ -177,7 +178,7 @@ from ..events.projections import ProjectionManager, get_projection_manager
 from ..api.rest import FastAPIService, create_api_service
 from ..api.websocket import WebSocketManager, get_websocket_manager
 from ..api.auth import AuthService, get_auth_service
-from ..api.graphql import GraphQLService, get_graphql_service
+# from ..api.graphql import GraphQLService, get_graphql_service  # Disabled due to Python 3.13 compatibility
 
 logger = logging.getLogger(__name__)
 
@@ -272,22 +273,22 @@ class ServiceConfiguration:
                 StrategyRepository,
                 PostgresStrategyRepository
             )
-            # Risk Assessment Repository PostgreSQL pour production
-            from ..persistence.postgres_risk_assessment_repository import PostgresRiskAssessmentRepository
+            # Risk Assessment Repository - Use memory for now (PostgreSQL implementation TODO)
+            from ..persistence.memory_risk_assessment_repository import MemoryRiskAssessmentRepository
             self.container.register_singleton(
                 RiskAssessmentRepository,
-                PostgresRiskAssessmentRepository
+                MemoryRiskAssessmentRepository
             )
-            # Portfolio Repository PostgreSQL pour production
-            from ..persistence.postgres_portfolio_repository import PostgresPortfolioRepository
+            # Portfolio Repository - Use memory for now (PostgreSQL implementation TODO)
+            from ..persistence.memory_portfolio_repository import MemoryPortfolioRepository
             self.container.register_singleton(
                 PortfolioRepository,
-                PostgresPortfolioRepository
+                MemoryPortfolioRepository
             )
-            # Order Repository PostgreSQL pour production
+            # Order Repository - Use memory for now (PostgreSQL implementation TODO)
             self.container.register_singleton(
                 OrderRepository,
-                PostgresOrderRepository
+                MemoryOrderRepository
             )
             # Backtest Repository PostgreSQL pour production (TODO: créer l'implémentation)
             self.container.register_singleton(
@@ -333,8 +334,8 @@ class ServiceConfiguration:
     def _configure_application_services(self) -> None:
         """Configure les handlers et use cases de l'application."""
 
-        # Command handlers - Scoped car ils peuvent avoir un état de transaction
-        self.container.register_scoped(
+        # Command handlers - Transient for simplicity (change to scoped if needed)
+        self.container.register_transient(
             StrategyCommandHandler,
             StrategyCommandHandler
         )
@@ -475,6 +476,14 @@ class ServiceConfiguration:
                     factory=lambda: self._create_yfinance_provider(provider_config.dict())
                 )
 
+            elif provider_name.startswith("ccxt_"):
+                # CCXT exchanges (ccxt_binance, ccxt_okx, ccxt_bybit, etc.)
+                exchange_name = provider_name.replace("ccxt_", "")
+                self.container.register_singleton(
+                    f"DataProvider_{provider_name}",
+                    factory=lambda: self._create_ccxt_provider(exchange_name, provider_config.dict())
+                )
+
     def _create_binance_provider(self, config: Dict[str, Any]):
         """Factory pour créer un provider Binance configuré."""
         # Import local pour éviter les dépendances circulaires
@@ -494,36 +503,46 @@ class ServiceConfiguration:
 
         return YFinanceProvider()
 
+    def _create_ccxt_provider(self, exchange_name: str, config: Dict[str, Any]):
+        """Factory pour créer un provider CCXT configuré."""
+        return CCXTProvider(
+            exchange_name=exchange_name,
+            api_key=config.get("api_key"),
+            secret=config.get("secret"),
+            password=config.get("password"),  # Pour certains exchanges
+            sandbox=config.get("sandbox", True),  # Sécurité par défaut
+            rate_limit=config.get("rate_limit", True),
+            options=config.get("options", {})
+        )
+
     def _create_order_execution_adapter(self) -> OrderExecutionAdapter:
         """Factory pour créer l'adaptateur d'exécution avec brokers configurés."""
-        from ...domain.entities.order import ExecutionVenue
-
         adapter = OrderExecutionAdapter()
 
         # Enregistrer des brokers mock pour le développement/tests
         if self.config.environment.value in ["development", "testing"]:
             # Mock brokers pour différentes venues
             venues_to_configure = [
-                ExecutionVenue.BINANCE,
-                ExecutionVenue.COINBASE,
-                ExecutionVenue.KRAKEN,
-                ExecutionVenue.ALPACA,
-                ExecutionVenue.INTERACTIVE_BROKERS
+                "binance",
+                "coinbase",
+                "kraken",
+                "alpaca",
+                "interactive_brokers"
             ]
 
             for venue in venues_to_configure:
                 mock_broker = MockBrokerAdapter(
                     venue=venue,
-                    base_latency_ms=50 if venue in [ExecutionVenue.BINANCE, ExecutionVenue.COINBASE] else 100,
-                    fill_probability=0.98 if venue in [ExecutionVenue.BINANCE, ExecutionVenue.COINBASE] else 0.95,
-                    price_slippage_bps=2.0 if venue == ExecutionVenue.BINANCE else 5.0
+                    base_latency_ms=50 if venue in ["binance", "coinbase"] else 100,
+                    fill_probability=0.98 if venue in ["binance", "coinbase"] else 0.95,
+                    price_slippage_bps=2.0 if venue == "binance" else 5.0
                 )
                 adapter.register_broker(venue, mock_broker)
 
         # En production, on enregistrerait de vrais adaptateurs de courtier
         # else:
-        #     adapter.register_broker(ExecutionVenue.BINANCE, RealBinanceAdapter(...))
-        #     adapter.register_broker(ExecutionVenue.COINBASE, RealCoinbaseAdapter(...))
+        #     adapter.register_broker("binance", RealBinanceAdapter(...))
+        #     adapter.register_broker("coinbase", RealCoinbaseAdapter(...))
         #     etc.
 
         logger.info(f"🏗️ OrderExecutionAdapter créé avec {len(adapter.get_supported_venues())} venues")
@@ -633,6 +652,15 @@ class ServiceConfiguration:
             coinbase_provider = CoinbaseProvider(sandbox=True)
             pipeline.register_provider(coinbase_provider)
 
+            # CCXT providers pour plus d'exchanges
+            # OKX sandbox
+            okx_provider = CCXTProviderFactory.create_provider("okx", sandbox=True)
+            pipeline.register_provider(okx_provider)
+
+            # Bybit sandbox
+            bybit_provider = CCXTProviderFactory.create_provider("bybit", sandbox=True)
+            pipeline.register_provider(bybit_provider)
+
         else:
             # Production: providers réels
             # Binance spot
@@ -646,6 +674,19 @@ class ServiceConfiguration:
             # Coinbase Pro
             coinbase_provider = CoinbaseProvider(sandbox=False)
             pipeline.register_provider(coinbase_provider)
+
+            # CCXT providers production
+            # OKX live
+            okx_provider = CCXTProviderFactory.create_provider("okx", sandbox=False)
+            pipeline.register_provider(okx_provider)
+
+            # Bybit live
+            bybit_provider = CCXTProviderFactory.create_provider("bybit", sandbox=False)
+            pipeline.register_provider(bybit_provider)
+
+            # Kraken (pas de sandbox, donc toujours live)
+            kraken_provider = CCXTProviderFactory.create_provider("kraken", sandbox=False)
+            pipeline.register_provider(kraken_provider)
 
         # Enregistrer le pipeline dans le container
         self.container.register_singleton(
@@ -725,7 +766,7 @@ class ServiceConfiguration:
                 # Démarrer le gestionnaire de projections
                 loop.create_task(projection_manager.start_all())
 
-                self.logger.info("Started event-driven services")
+                logger.info("Started event-driven services")
 
             except RuntimeError:
                 pass  # Pas de loop, on démarrera plus tard
@@ -749,12 +790,12 @@ class ServiceConfiguration:
             factory=lambda: websocket_manager
         )
 
-        # GraphQL Service - Singleton global
-        graphql_service = get_graphql_service()
-        self.container.register_singleton(
-            GraphQLService,
-            factory=lambda: graphql_service
-        )
+        # # GraphQL Service - Singleton global (Disabled due to Python 3.13 compatibility)
+        # graphql_service = get_graphql_service()
+        # self.container.register_singleton(
+        #     GraphQLService,
+        #     factory=lambda: graphql_service
+        # )
 
         # FastAPI Service - Singleton avec container
         api_service = create_api_service(self.container)
@@ -772,7 +813,7 @@ class ServiceConfiguration:
                 # Démarrer le WebSocket manager
                 loop.create_task(websocket_manager.start())
 
-                self.logger.info("Started API services")
+                logger.info("Started API services")
 
             except RuntimeError:
                 pass  # Pas de loop, on démarrera plus tard
@@ -822,9 +863,8 @@ class ServiceConfiguration:
 
         # Cache Manager - Singleton global
         cache_config = CacheConfig(
-            backend="redis" if self.config.environment.value == "production" else "memory",
-            redis_host=self.config.redis_host if hasattr(self.config, 'redis_host') else "localhost",
-            redis_port=self.config.redis_port if hasattr(self.config, 'redis_port') else 6379,
+            redis_host=self.config.redis.host if hasattr(self.config, 'redis') else "localhost",
+            redis_port=self.config.redis.port if hasattr(self.config, 'redis') else 6379,
             default_ttl=3600,
             max_memory_mb=512
         )
@@ -875,11 +915,11 @@ class ServiceConfiguration:
                 loop = asyncio.get_event_loop()
 
                 # Initialiser le database manager
-                if db_manager and not db_manager._initialized:
+                if db_manager and hasattr(db_manager, '_initialized') and not db_manager._initialized:
                     loop.create_task(db_manager.initialize())
 
                 # Initialiser le cache manager
-                if cache_manager and not cache_manager._initialized:
+                if cache_manager and hasattr(cache_manager, '_initialized') and not cache_manager._initialized:
                     loop.create_task(cache_manager.initialize())
 
                 # Initialiser la time-series DB
@@ -890,7 +930,7 @@ class ServiceConfiguration:
                 if migration_manager:
                     loop.create_task(migration_manager.initialize())
 
-                self.logger.info("Started persistence services")
+                logger.info("Started persistence services")
 
             except RuntimeError:
                 pass  # Pas de loop, on démarrera plus tard

@@ -7,21 +7,22 @@ Utilise Protocol pour typing duck typing moderne.
 """
 
 from abc import ABC, abstractmethod
-from typing import Protocol, Dict, List, Optional, Any
+from dataclasses import dataclass, field
 from datetime import datetime
-from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Protocol, Union
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 
 # ================================
 # ENUMS & VALUE OBJECTS
 # ================================
 
+
 class SignalAction(Enum):
     """Actions possibles pour un signal de trading"""
+
     BUY = "buy"
     SELL = "sell"
     HOLD = "hold"
@@ -31,6 +32,7 @@ class SignalAction(Enum):
 
 class TimeFrame(Enum):
     """Timeframes supportés"""
+
     M1 = "1m"
     M5 = "5m"
     M15 = "15m"
@@ -42,6 +44,7 @@ class TimeFrame(Enum):
 @dataclass(frozen=True)
 class MarketData:
     """Données de marché OHLCV + métadonnées"""
+
     symbol: str
     timestamp: datetime
     open: float
@@ -56,34 +59,37 @@ class MarketData:
 @dataclass(frozen=True)
 class Signal:
     """Signal de trading avec métadonnées"""
+
     timestamp: datetime
     symbol: str
     action: SignalAction
     strength: float  # 0.0 to 1.0
     price: Optional[float] = None
     size: Optional[float] = None
-    metadata: Dict[str, Any] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
-        if self.metadata is None:
-            object.__setattr__(self, 'metadata', {})
+    def __post_init__(self) -> None:
+        # Validation can be added here if needed
+        pass
 
 
 @dataclass(frozen=True)
 class Position:
     """Position de trading"""
+
     symbol: str
     size: float  # Positive for long, negative for short
     entry_price: float
     current_price: float
     timestamp: datetime
     unrealized_pnl: float = 0.0
-    metadata: Dict[str, Any] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 # ================================
 # CORE PROTOCOLS
 # ================================
+
 
 class DataProvider(Protocol):
     """Interface pour fournisseurs de données"""
@@ -94,7 +100,7 @@ class DataProvider(Protocol):
         timeframe: TimeFrame,
         limit: int = 1000,
         start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None
+        end_time: Optional[datetime] = None,
     ) -> pd.DataFrame:
         """Récupère données OHLCV pour un symbole et timeframe"""
         ...
@@ -124,9 +130,7 @@ class Strategy(Protocol):
     """Interface pour stratégies de trading"""
 
     def generate_signals(
-        self,
-        data: pd.DataFrame,
-        features: Optional[pd.DataFrame] = None
+        self, data: pd.DataFrame, features: Optional[pd.DataFrame] = None
     ) -> List[Signal]:
         """Génère signaux de trading"""
         ...
@@ -144,18 +148,13 @@ class RiskManager(Protocol):
     """Interface pour gestion des risques"""
 
     def calculate_position_size(
-        self,
-        signal: Signal,
-        portfolio_value: float,
-        current_positions: List[Position]
+        self, signal: Signal, portfolio_value: float, current_positions: List[Position]
     ) -> float:
         """Calcule taille de position"""
         ...
 
     def check_risk_limits(
-        self,
-        signal: Signal,
-        current_positions: List[Position]
+        self, signal: Signal, current_positions: List[Position]
     ) -> bool:
         """Vérifie limites de risque"""
         ...
@@ -189,9 +188,7 @@ class OrderExecutor(Protocol):
     """Interface pour exécution d'ordres"""
 
     async def execute_signal(
-        self,
-        signal: Signal,
-        position_size: float
+        self, signal: Signal, position_size: float
     ) -> Dict[str, Any]:
         """Exécute un signal de trading"""
         ...
@@ -221,10 +218,11 @@ class CacheService(Protocol):
 # ABSTRACT BASE CLASSES
 # ================================
 
+
 class BaseStrategy(ABC):
     """Classe de base pour stratégies avec implémentation commune"""
 
-    def __init__(self, name: str, parameters: Dict[str, Any] = None):
+    def __init__(self, name: str, parameters: Optional[Dict[str, Any]] = None):
         self.name = name
         self.parameters = parameters or {}
         self._feature_processor: Optional[FeatureProcessor] = None
@@ -241,9 +239,7 @@ class BaseStrategy(ABC):
 
     @abstractmethod
     def generate_signals(
-        self,
-        data: pd.DataFrame,
-        features: Optional[pd.DataFrame] = None
+        self, data: pd.DataFrame, features: Optional[pd.DataFrame] = None
     ) -> List[Signal]:
         """Implémentation spécifique à chaque stratégie"""
         pass
@@ -258,7 +254,7 @@ class BaseStrategy(ABC):
 class BaseDataProvider(ABC):
     """Classe de base pour data providers"""
 
-    def __init__(self, name: str, config: Dict[str, Any] = None):
+    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
         self.name = name
         self.config = config or {}
         self._cache: Optional[CacheService] = None
@@ -283,6 +279,7 @@ class BaseDataProvider(ABC):
 # REPOSITORY PATTERNS
 # ================================
 
+
 class StrategyRepository(Protocol):
     """Repository pour persistance des stratégies"""
 
@@ -303,17 +300,12 @@ class BacktestRepository(Protocol):
     """Repository pour résultats de backtests"""
 
     async def save_backtest_result(
-        self,
-        strategy_name: str,
-        result: Dict[str, Any]
+        self, strategy_name: str, result: Dict[str, Any]
     ) -> str:
         """Sauvegarde résultat de backtest"""
         ...
 
-    async def get_backtest_results(
-        self,
-        strategy_name: str
-    ) -> List[Dict[str, Any]]:
+    async def get_backtest_results(self, strategy_name: str) -> List[Dict[str, Any]]:
         """Récupère historique des backtests"""
         ...
 
@@ -321,6 +313,7 @@ class BacktestRepository(Protocol):
 # ================================
 # EVENT SYSTEM
 # ================================
+
 
 class EventHandler(Protocol):
     """Interface pour gestionnaires d'événements"""
@@ -346,18 +339,25 @@ class EventBus(Protocol):
 # METRICS & MONITORING
 # ================================
 
+
 class MetricsCollector(Protocol):
     """Interface pour collecte de métriques"""
 
-    def record_metric(self, name: str, value: float, tags: Dict[str, str] = None) -> None:
+    def record_metric(
+        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Enregistre une métrique"""
         ...
 
-    def increment_counter(self, name: str, tags: Dict[str, str] = None) -> None:
+    def increment_counter(
+        self, name: str, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Incrémente un compteur"""
         ...
 
-    def record_histogram(self, name: str, value: float, tags: Dict[str, str] = None) -> None:
+    def record_histogram(
+        self, name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """Enregistre dans un histogramme"""
         ...
 
@@ -366,14 +366,33 @@ class AlertManager(Protocol):
     """Interface pour gestion des alertes"""
 
     async def send_alert(
-        self,
-        level: str,
-        message: str,
-        metadata: Dict[str, Any] = None
+        self, level: str, message: str, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """Envoie une alerte"""
         ...
 
-    def set_threshold(self, metric: str, threshold: float, operator: str = "gt") -> None:
+    def set_threshold(
+        self, metric: str, threshold: float, operator: str = "gt"
+    ) -> None:
         """Définit un seuil d'alerte"""
+        ...
+
+
+class DataStorage(Protocol):
+    """Interface pour stockage de données"""
+
+    async def store(self, key: str, data: Any) -> None:
+        """Stocke des données"""
+        ...
+
+    async def retrieve(self, key: str) -> Any:
+        """Récupère des données"""
+        ...
+
+    async def delete(self, key: str) -> bool:
+        """Supprime des données"""
+        ...
+
+    async def list_keys(self, prefix: str = "") -> List[str]:
+        """Liste les clés disponibles"""
         ...

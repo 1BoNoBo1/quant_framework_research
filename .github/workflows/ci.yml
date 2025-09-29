@@ -1,87 +1,363 @@
-name: CI/CD Pipeline
+# 🚀 QFrame CI/CD Pipeline
+name: QFrame CI/CD
 
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Tests hebdomadaires le lundi à 2h
 
 env:
-  PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.7.1"
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: ${{ github.repository }}/qframe-api
+  IMAGE_NAME_UI: ${{ github.repository }}/qframe-ui
+  PYTHON_VERSION: '3.13'
 
 jobs:
-  lint:
-    name: Lint & Format Check
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
-    
-    - name: Install Poetry
-      run: pip install poetry==1.7.1
-    
-    - name: Install dependencies
-      run: poetry install --no-interaction
-    
-    - name: Run Black
-      run: poetry run black --check qframe tests
-    
-    - name: Run Ruff
-      run: poetry run ruff check qframe tests
-
+  # 🧪 Tests et Quality Assurance
   test:
-    name: Test Suite
+    name: Tests & QA
     runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: qframe123
+          POSTGRES_USER: qframe
+          POSTGRES_DB: qframe_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🐍 Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
-    
-    - name: Install Poetry
-      run: pip install poetry==1.7.1
-    
-    - name: Install dependencies
+        python-version: ${{ matrix.python-version }}
+
+    - name: 📦 Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.3
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: 🔧 Load Cached Dependencies
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: 📚 Install Dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+
+    - name: 🏗️ Install QFrame Package
       run: poetry install --no-interaction
-    
-    - name: Run tests
-      run: poetry run pytest tests/ -v --cov=qframe --cov-report=xml
-    
-    - name: Upload coverage
+
+    - name: 🔍 Code Quality - Black
+      run: poetry run black --check qframe/
+
+    - name: 🔍 Code Quality - Ruff
+      run: poetry run ruff check qframe/
+
+    - name: 🔍 Type Checking - MyPy
+      run: poetry run mypy qframe/
+      continue-on-error: true  # MyPy peut être strict
+
+    - name: 🧪 Run Unit Tests
+      run: |
+        poetry run pytest tests/unit/ -v \
+          --cov=qframe \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term-missing
+      env:
+        QFRAME_ENVIRONMENT: testing
+        QFRAME_DATABASE_URL: postgresql://qframe:qframe123@localhost:5432/qframe_test
+        QFRAME_REDIS_URL: redis://localhost:6379/1
+
+    - name: 🧪 Run Integration Tests
+      run: |
+        poetry run pytest tests/integration/ -v \
+          --cov=qframe \
+          --cov-append \
+          --cov-report=xml
+      env:
+        QFRAME_ENVIRONMENT: testing
+        QFRAME_DATABASE_URL: postgresql://qframe:qframe123@localhost:5432/qframe_test
+        QFRAME_REDIS_URL: redis://localhost:6379/1
+
+    - name: 📊 Upload Coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
 
-  build:
-    name: Build Package
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: 📋 Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
       with:
-        python-version: 3.11
-    
-    - name: Install Poetry
-      run: pip install poetry==1.7.1
-    
-    - name: Build package
-      run: poetry build
-    
-    - name: Upload artifacts
+        name: pytest-results-${{ matrix.python-version }}
+        path: pytest-results.xml
+        reporter: java-junit
+
+  # 🔒 Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔒 Security Audit - Safety
+      run: |
+        pip install safety
+        safety check --json --output safety-report.json
+      continue-on-error: true
+
+    - name: 🔒 Security Audit - Bandit
+      run: |
+        pip install bandit
+        bandit -r qframe/ -f json -o bandit-report.json
+      continue-on-error: true
+
+    - name: 🔒 Dependency Check
+      uses: pypa/gh-action-pip-audit@v1.0.8
+      with:
+        inputs: requirements.txt
+
+  # 🐳 Build Docker Images
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    outputs:
+      api-image: ${{ steps.image.outputs.api-image }}
+      ui-image: ${{ steps.image.outputs.ui-image }}
+      api-digest: ${{ steps.build-api.outputs.digest }}
+      ui-digest: ${{ steps.build-ui.outputs.digest }}
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 🔐 Login to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📝 Extract Metadata - API
+      id: meta-api
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: 📝 Extract Metadata - UI
+      id: meta-ui
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_UI }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: 🏗️ Build and Push API Image
+      id: build-api
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta-api.outputs.tags }}
+        labels: ${{ steps.meta-api.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 🏗️ Build and Push UI Image
+      id: build-ui
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.ui
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta-ui.outputs.tags }}
+        labels: ${{ steps.meta-ui.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: 📋 Set Output Images
+      id: image
+      run: |
+        echo "api-image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+        echo "ui-image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_UI }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  # 🎯 Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: 🔐 Configure Kubeconfig
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+
+    - name: 🚀 Deploy to Staging
+      run: |
+        # Update image tags
+        cd k8s
+        kustomize edit set image qframe/api=${{ needs.build.outputs.api-image }}
+        kustomize edit set image qframe/ui=${{ needs.build.outputs.ui-image }}
+
+        # Apply configuration
+        kubectl apply -k . -n qframe-staging
+
+        # Wait for rollout
+        kubectl rollout status deployment/qframe-api -n qframe-staging
+        kubectl rollout status deployment/qframe-ui -n qframe-staging
+
+    - name: 🧪 Run Smoke Tests
+      run: |
+        # Wait for services to be ready
+        kubectl wait --for=condition=ready pod -l app=qframe-api -n qframe-staging --timeout=300s
+
+        # Run basic health checks
+        kubectl run test-pod --image=curlimages/curl --rm -i --restart=Never -n qframe-staging -- \
+          curl -f http://qframe-api:8000/health
+
+  # 🏭 Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: 🔐 Configure Kubeconfig
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+
+    - name: 🚀 Deploy to Production
+      run: |
+        # Update image tags
+        cd k8s
+        kustomize edit set image qframe/api=${{ needs.build.outputs.api-image }}
+        kustomize edit set image qframe/ui=${{ needs.build.outputs.ui-image }}
+
+        # Apply configuration
+        kubectl apply -k . -n qframe
+
+        # Wait for rollout
+        kubectl rollout status deployment/qframe-api -n qframe
+        kubectl rollout status deployment/qframe-ui -n qframe
+
+    - name: 🧪 Production Health Check
+      run: |
+        # Wait for services to be ready
+        kubectl wait --for=condition=ready pod -l app=qframe-api -n qframe --timeout=600s
+
+        # Extended health checks
+        kubectl run prod-test-pod --image=curlimages/curl --rm -i --restart=Never -n qframe -- \
+          curl -f http://qframe-api:8000/health
+
+    - name: 📢 Notify Deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
+
+  # 📊 Performance Testing
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🚀 Load Testing with K6
+      uses: grafana/k6-action@v0.3.1
+      with:
+        filename: tests/performance/load-test.js
+      env:
+        K6_TARGET_URL: https://staging.qframe.com
+
+    - name: 📊 Upload Performance Results
       uses: actions/upload-artifact@v3
       with:
-        name: dist
-        path: dist/
+        name: performance-results
+        path: performance-results.json

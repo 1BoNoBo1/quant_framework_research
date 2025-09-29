@@ -1,0 +1,110 @@
+# 🐳 QFrame Development Docker Compose
+# Version simplifiée pour développement local
+
+version: '3.8'
+
+services:
+  # 🔴 Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: qframe-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - qframe-dev-network
+
+  # 🗄️ PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: qframe-postgres-dev
+    environment:
+      POSTGRES_DB: qframe_dev
+      POSTGRES_USER: qframe
+      POSTGRES_PASSWORD: qframe123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - qframe-dev-network
+
+  # 🚀 QFrame API Backend
+  qframe-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: qframe-api-dev
+    environment:
+      - QFRAME_ENVIRONMENT=development
+      - QFRAME_LOG_LEVEL=DEBUG
+      - QFRAME_DATABASE_URL=postgresql://qframe:qframe123@postgres:5432/qframe_dev
+      - QFRAME_REDIS_URL=redis://redis:6379/0
+      - QFRAME_SECRET_KEY=dev-secret-key-not-for-production
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/.venv  # Exclude venv from volume mount
+    depends_on:
+      - redis
+      - postgres
+    command: ["python", "start_api.py", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - qframe-dev-network
+
+  # 🖥️ QFrame UI Streamlit
+  qframe-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: qframe-ui-dev
+    environment:
+      - QFRAME_API_URL=http://qframe-api:8000
+      - STREAMLIT_SERVER_HEADLESS=true
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    depends_on:
+      - qframe-api
+    networks:
+      - qframe-dev-network
+
+  # 📊 Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: qframe-prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.dev.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - qframe-dev-network
+
+  # 📈 Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: qframe-grafana-dev
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_dev_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - qframe-dev-network
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  grafana_dev_data:
+
+networks:
+  qframe-dev-network:
+    driver: bridge

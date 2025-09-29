@@ -1,0 +1,45 @@
+# 🔧 QFrame Configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qframe-config
+  namespace: qframe
+data:
+  # Environment variables for API
+  QFRAME_ENVIRONMENT: "production"
+  QFRAME_LOG_LEVEL: "INFO"
+  QFRAME_CORS_ORIGINS: "http://localhost:8501,http://qframe-ui:8501"
+
+  # Database connection
+  POSTGRES_DB: "qframe"
+  POSTGRES_USER: "qframe"
+
+  # Redis configuration
+  REDIS_URL: "redis://qframe-redis:6379/0"
+
+  # Streamlit configuration
+  STREAMLIT_SERVER_HEADLESS: "true"
+  STREAMLIT_SERVER_PORT: "8501"
+  STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
+  QFRAME_API_URL: "http://qframe-api:8000"
+
+  # Monitoring
+  PROMETHEUS_RETENTION: "15d"
+  GRAFANA_ADMIN_USER: "admin"
+---
+# 🔐 Secrets for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: qframe-secrets
+  namespace: qframe
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "qframe123-change-in-production"
+  QFRAME_SECRET_KEY: "your-secret-key-change-in-production"
+  GRAFANA_ADMIN_PASSWORD: "admin-change-in-production"
+
+  # API Keys (to be set by deployment)
+  BINANCE_API_KEY: ""
+  BINANCE_SECRET_KEY: ""
+  ALPHA_VANTAGE_API_KEY: ""

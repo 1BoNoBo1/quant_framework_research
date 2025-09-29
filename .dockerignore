@@ -1,0 +1,103 @@
+# 🚫 Docker Ignore File
+# Fichiers et dossiers à exclure du contexte Docker
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Development
+.env.local
+.env.development
+.env.test
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node.js (si applicable)
+node_modules/
+npm-debug.log*
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Database
+*.db
+*.sqlite3
+
+# Cache
+.cache/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# Large data files
+*.parquet
+*.csv
+data/
+datasets/
+
+# Model files
+*.pkl
+*.joblib
+models/
+
+# Environment files
+.env*
+!.env.example

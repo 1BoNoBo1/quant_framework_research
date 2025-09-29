@@ -1,0 +1,103 @@
+# 🖥️ QFrame UI Streamlit Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-ui
+  namespace: qframe
+  labels:
+    app: qframe-ui
+    component: frontend
+spec:
+  replicas: 1  # Streamlit ne supporte pas le clustering par défaut
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: qframe-ui
+  template:
+    metadata:
+      labels:
+        app: qframe-ui
+        component: frontend
+    spec:
+      containers:
+      - name: qframe-ui
+        image: qframe/ui:latest  # À construire et pousser vers registry
+        ports:
+        - containerPort: 8501
+        env:
+        - name: QFRAME_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: QFRAME_API_URL
+        - name: STREAMLIT_SERVER_HEADLESS
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: STREAMLIT_SERVER_HEADLESS
+        - name: STREAMLIT_SERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: STREAMLIT_SERVER_PORT
+        - name: STREAMLIT_SERVER_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: STREAMLIT_SERVER_ADDRESS
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      initContainers:
+      - name: wait-for-api
+        image: curlimages/curl:latest
+        command:
+        - sh
+        - -c
+        - |
+          until curl -f http://qframe-api:8000/health; do
+            echo "Waiting for QFrame API..."
+            sleep 5
+          done
+---
+# Service pour QFrame UI
+apiVersion: v1
+kind: Service
+metadata:
+  name: qframe-ui
+  namespace: qframe
+  labels:
+    app: qframe-ui
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8501
+    targetPort: 8501
+    protocol: TCP
+    name: http
+  selector:
+    app: qframe-ui

@@ -11,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
 
-from ...core.handlers import Query, QueryHandler, QueryResult
+from ..base.query import Query, QueryHandler, QueryResult
 from ...domain.entities.backtest import BacktestConfiguration, BacktestResult, BacktestStatus, BacktestType
 from ...domain.repositories.backtest_repository import BacktestRepository
 

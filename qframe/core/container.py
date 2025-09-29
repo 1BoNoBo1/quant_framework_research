@@ -6,21 +6,23 @@ Container IoC pour gestion des dépendances et inversion de contrôle.
 Permet une architecture testable et découplée.
 """
 
-from typing import Any, Dict, Type, TypeVar, Callable, Optional, Protocol
 import inspect
 import threading
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional, Protocol, Type, TypeVar, Union
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Injectable(Protocol):
     """Marque une classe comme injectable"""
+
     pass
 
 
 class LifetimeScope:
     """Scopes de vie des objets"""
+
     SINGLETON = "singleton"
     TRANSIENT = "transient"
     SCOPED = "scoped"
@@ -31,10 +33,10 @@ class ServiceDescriptor:
 
     def __init__(
         self,
-        interface: Type,
-        implementation: Type,
+        interface: Type[T],
+        implementation: Type[T],
         lifetime: str = LifetimeScope.TRANSIENT,
-        factory: Optional[Callable] = None
+        factory: Optional[Callable[[], T]] = None,
     ):
         self.interface = interface
         self.implementation = implementation
@@ -53,38 +55,43 @@ class DIContainer:
     - Thread safety
     """
 
-    def __init__(self):
-        self._services: Dict[Type, ServiceDescriptor] = {}
-        self._instances: Dict[Type, Any] = {}
+    def __init__(self) -> None:
+        self._services: Dict[Type[Any], ServiceDescriptor] = {}
+        self._instances: Dict[Type[Any], Any] = {}
         self._lock = threading.RLock()
-        self._scoped_instances: Dict[str, Dict[Type, Any]] = {}
+        self._scoped_instances: Dict[str, Dict[Type[Any], Any]] = {}
         self._current_scope: Optional[str] = None
-        self._resolution_stack: list = []
+        self._resolution_stack: List[Type[Any]] = []
 
     def register_singleton(
         self,
         interface: Type[T],
-        implementation: Type[T] = None,
-        factory: Callable[[], T] = None
-    ) -> 'DIContainer':
+        implementation: Optional[Type[T]] = None,
+        factory: Optional[Callable[[], T]] = None,
+    ) -> "DIContainer":
         """Enregistre un service singleton"""
-        return self._register(interface, implementation, LifetimeScope.SINGLETON, factory)
+        return self._register(
+            interface, implementation, LifetimeScope.SINGLETON, factory
+        )
 
     def register_transient(
         self,
         interface: Type[T],
-        implementation: Type[T] = None,
-        factory: Callable[[], T] = None
-    ) -> 'DIContainer':
+        implementation: Optional[Type[T]] = None,
+        factory: Optional[Callable[[], T]] = None,
+        name: Optional[str] = None,
+    ) -> "DIContainer":
         """Enregistre un service transient (nouvelle instance à chaque résolution)"""
-        return self._register(interface, implementation, LifetimeScope.TRANSIENT, factory)
+        return self._register(
+            interface, implementation, LifetimeScope.TRANSIENT, factory, name
+        )
 
     def register_scoped(
         self,
         interface: Type[T],
-        implementation: Type[T] = None,
-        factory: Callable[[], T] = None
-    ) -> 'DIContainer':
+        implementation: Optional[Type[T]] = None,
+        factory: Optional[Callable[[], T]] = None,
+    ) -> "DIContainer":
         """Enregistre un service scoped (une instance par scope)"""
         return self._register(interface, implementation, LifetimeScope.SCOPED, factory)
 
@@ -93,8 +100,9 @@ class DIContainer:
         interface: Type[T],
         implementation: Type[T] = None,
         lifetime: str = LifetimeScope.TRANSIENT,
-        factory: Callable[[], T] = None
-    ) -> 'DIContainer':
+        factory: Callable[[], T] = None,
+        name: Optional[str] = None,
+    ) -> "DIContainer":
         """Enregistrement interne"""
         with self._lock:
             if implementation is None and factory is None:
@@ -104,7 +112,7 @@ class DIContainer:
                 interface=interface,
                 implementation=implementation,
                 lifetime=lifetime,
-                factory=factory
+                factory=factory,
             )
 
             self._services[interface] = descriptor
@@ -144,13 +152,15 @@ class DIContainer:
 
         if interface not in self._services:
             # Try to auto-register if it's a concrete class (not a Protocol or abstract class)
-            if (inspect.isclass(interface) and
-                not inspect.isabstract(interface) and
-                not getattr(interface, '_is_protocol', False)):
+            if (
+                inspect.isclass(interface)
+                and not inspect.isabstract(interface)
+                and not getattr(interface, "_is_protocol", False)
+            ):
                 self.register_transient(interface, interface)
             else:
                 # Handle string annotations and forward references
-                interface_name = getattr(interface, '__name__', str(interface))
+                interface_name = getattr(interface, "__name__", str(interface))
                 raise ValueError(f"Service {interface_name} not registered")
 
         descriptor = self._services[interface]
@@ -194,12 +204,14 @@ class DIContainer:
         # Get constructor parameters (skip 'self')
         params = {}
         for param_name, param in sig.parameters.items():
-            if param_name == 'self':
+            if param_name == "self":
                 continue
 
             # Skip *args and **kwargs
-            if param.kind in (inspect.Parameter.VAR_POSITIONAL,
-                             inspect.Parameter.VAR_KEYWORD):
+            if param.kind in (
+                inspect.Parameter.VAR_POSITIONAL,
+                inspect.Parameter.VAR_KEYWORD,
+            ):
                 continue
 
             if param.annotation == inspect.Parameter.empty:
@@ -214,7 +226,7 @@ class DIContainer:
                 # For string annotations, try to resolve using registered services
                 # This handles the case where ServiceB is defined locally and referenced as string
                 for registered_type in self._services.keys():
-                    if getattr(registered_type, '__name__', None) == annotation:
+                    if getattr(registered_type, "__name__", None) == annotation:
                         annotation = registered_type
                         break
 
@@ -228,26 +240,27 @@ class DIContainer:
 
         return implementation(**params)
 
-    def create_scope(self, scope_id: str = None) -> 'ScopeManager':
+    def create_scope(self, scope_id: Optional[str] = None) -> "ScopeManager":
         """Crée un nouveau scope"""
         if scope_id is None:
             import uuid
+
             scope_id = str(uuid.uuid4())
 
         return ScopeManager(self, scope_id)
 
-    def _enter_scope(self, scope_id: str):
+    def _enter_scope(self, scope_id: str) -> None:
         """Interne: entre dans un scope"""
         self._current_scope = scope_id
         if scope_id not in self._scoped_instances:
             self._scoped_instances[scope_id] = {}
 
-    def _exit_scope(self, scope_id: str):
+    def _exit_scope(self, scope_id: str) -> None:
         """Interne: sort d'un scope et nettoie"""
         if scope_id in self._scoped_instances:
             # Cleanup scoped instances
             for instance in self._scoped_instances[scope_id].values():
-                if hasattr(instance, 'dispose'):
+                if hasattr(instance, "dispose"):
                     try:
                         instance.dispose()
                     except Exception:
@@ -262,12 +275,17 @@ class DIContainer:
         """Retourne les enregistrements de services (pour debug)"""
         return self._services.copy()
 
+    def is_registered(self, interface: Type[T]) -> bool:
+        """Vérifie si un service est enregistré"""
+        with self._lock:
+            return interface in self._services
+
     def clear(self):
         """Nettoie le container"""
         with self._lock:
             # Cleanup singletons
             for instance in self._instances.values():
-                if hasattr(instance, 'dispose'):
+                if hasattr(instance, "dispose"):
                     try:
                         instance.dispose()
                     except Exception:
@@ -303,9 +321,10 @@ class ScopeManager:
 # DECORATORS
 # ================================
 
+
 def injectable(cls: Type[T]) -> Type[T]:
     """Décorateur pour marquer une classe comme injectable"""
-    if not hasattr(cls, '__annotations__'):
+    if not hasattr(cls, "__annotations__"):
         cls.__annotations__ = {}
 
     # Add Injectable protocol marker
@@ -335,6 +354,7 @@ def scoped(cls: Type[T]) -> Type[T]:
 # AUTO-REGISTRATION
 # ================================
 
+
 def auto_register(container: DIContainer, module_or_class):
     """Auto-enregistre les classes décorées d'un module"""
 
@@ -342,18 +362,18 @@ def auto_register(container: DIContainer, module_or_class):
         # Register all injectable classes in module
         for name in dir(module_or_class):
             obj = getattr(module_or_class, name)
-            if inspect.isclass(obj) and hasattr(obj, '__injectable__'):
+            if inspect.isclass(obj) and hasattr(obj, "__injectable__"):
                 _register_class(container, obj)
 
     elif inspect.isclass(module_or_class):
         # Register single class
-        if hasattr(module_or_class, '__injectable__'):
+        if hasattr(module_or_class, "__injectable__"):
             _register_class(container, module_or_class)
 
 
 def _register_class(container: DIContainer, cls: Type):
     """Enregistre une classe selon son lifetime décoré"""
-    lifetime = getattr(cls, '__lifetime__', LifetimeScope.TRANSIENT)
+    lifetime = getattr(cls, "__lifetime__", LifetimeScope.TRANSIENT)
 
     if lifetime == LifetimeScope.SINGLETON:
         container.register_singleton(cls, cls)
@@ -367,6 +387,7 @@ def _register_class(container: DIContainer, cls: Type):
 # FACTORY HELPERS
 # ================================
 
+
 def factory(func: Callable[[], T]) -> Callable[[], T]:
     """Décorateur pour marquer une fonction comme factory"""
     func.__is_factory__ = True
@@ -377,7 +398,9 @@ def configure_services(container: DIContainer):
     """Configuration de base des services framework"""
 
     # Import local pour éviter les dépendances circulaires
-    from ..infrastructure.config.service_configuration import configure_production_services
+    from ..infrastructure.config.service_configuration import (
+        configure_production_services,
+    )
 
     # Configuration complète via le nouveau système
     configure_production_services(container)
@@ -387,16 +410,17 @@ def configure_services(container: DIContainer):
 # TESTING HELPERS
 # ================================
 
+
 class MockContainer(DIContainer):
     """Container pour tests avec mocks"""
 
-    def register_mock(self, interface: Type[T], mock_instance: T) -> 'MockContainer':
+    def register_mock(self, interface: Type[T], mock_instance: T) -> "MockContainer":
         """Enregistre un mock"""
         self._instances[interface] = mock_instance
         descriptor = ServiceDescriptor(
             interface=interface,
             implementation=type(mock_instance),
-            lifetime=LifetimeScope.SINGLETON
+            lifetime=LifetimeScope.SINGLETON,
         )
         self._services[interface] = descriptor
         return self

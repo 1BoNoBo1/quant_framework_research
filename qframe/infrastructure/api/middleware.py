@@ -15,10 +15,9 @@ from typing import Dict, List, Optional, Any, Callable
 from collections import defaultdict
 
 from fastapi import Request, Response, HTTPException, status
-from fastapi.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware as FastAPICORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware as StarletteBaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..observability.logging import LoggerFactory
 from ..observability.metrics import get_business_metrics

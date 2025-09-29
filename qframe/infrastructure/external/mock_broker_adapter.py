@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Any
 import logging
 import random
 
-from qframe.domain.entities.order import Order, OrderStatus, OrderSide, OrderType, ExecutionVenue
+from qframe.domain.entities.order import Order, OrderStatus, OrderSide, OrderType
 from qframe.domain.services.execution_service import VenueQuote
 from qframe.infrastructure.external.order_execution_adapter import BrokerAdapter
 
@@ -30,7 +30,7 @@ class MockBrokerAdapter(BrokerAdapter):
 
     def __init__(
         self,
-        venue: ExecutionVenue,
+        venue: str,
         base_latency_ms: int = 100,
         fill_probability: float = 0.95,
         price_slippage_bps: float = 5.0
@@ -53,20 +53,20 @@ class MockBrokerAdapter(BrokerAdapter):
 
         # Configuration des frais par venue
         self._fee_rates = {
-            ExecutionVenue.BINANCE: Decimal("0.001"),   # 0.1%
-            ExecutionVenue.COINBASE: Decimal("0.005"),  # 0.5%
-            ExecutionVenue.KRAKEN: Decimal("0.0026"),   # 0.26%
-            ExecutionVenue.ALPACA: Decimal("0.0000"),   # Gratuit pour stocks
-            ExecutionVenue.INTERACTIVE_BROKERS: Decimal("0.0005")  # 0.05%
+            "binance": Decimal("0.001"),   # 0.1%
+            "coinbase": Decimal("0.005"),  # 0.5%
+            "kraken": Decimal("0.0026"),   # 0.26%
+            "alpaca": Decimal("0.0000"),   # Gratuit pour stocks
+            "interactive_brokers": Decimal("0.0005")  # 0.05%
         }
 
-        logger.info(f"🤖 MockBrokerAdapter initialized for {venue.value}")
+        logger.info(f"🤖 MockBrokerAdapter initialized for {venue}")
 
     async def submit_order(self, order: Order) -> Dict[str, Any]:
         """Soumet un ordre au courtier fictif"""
         await self._simulate_latency()
 
-        broker_order_id = f"{self.venue.value}_{uuid.uuid4().hex[:8]}"
+        broker_order_id = f"{self.venue}_{uuid.uuid4().hex[:8]}"
 
         # Simuler parfois un rejet d'ordre
         if random.random() < 0.02:  # 2% de chance de rejet
@@ -100,7 +100,7 @@ class MockBrokerAdapter(BrokerAdapter):
             "fees": "0",
             "commission": "0",
             "created_at": datetime.utcnow().isoformat(),
-            "venue": self.venue.value
+            "venue": self.venue
         }
 
         self._orders[broker_order_id] = broker_order
@@ -111,13 +111,13 @@ class MockBrokerAdapter(BrokerAdapter):
         elif order.order_type == OrderType.LIMIT:
             asyncio.create_task(self._simulate_limit_execution(broker_order_id))
 
-        logger.info(f"📤 Order submitted to {self.venue.value}: {broker_order_id}")
+        logger.info(f"📤 Order submitted to {self.venue}: {broker_order_id}")
 
         return {
             "success": True,
             "order_id": broker_order_id,
             "status": "submitted",
-            "venue": self.venue.value
+            "venue": self.venue
         }
 
     async def cancel_order(self, order_id: str, broker_order_id: str) -> bool:
@@ -196,10 +196,11 @@ class MockBrokerAdapter(BrokerAdapter):
 
         return VenueQuote(
             venue=self.venue,
+            symbol=symbol,
             bid_price=bid_price,
             ask_price=ask_price,
-            bid_volume=base_volume * Decimal(str(random.uniform(0.8, 1.2))),
-            ask_volume=base_volume * Decimal(str(random.uniform(0.8, 1.2))),
+            bid_size=base_volume * Decimal(str(random.uniform(0.8, 1.2))),
+            ask_size=base_volume * Decimal(str(random.uniform(0.8, 1.2))),
             timestamp=datetime.utcnow()
         )
 
@@ -212,7 +213,7 @@ class MockBrokerAdapter(BrokerAdapter):
 
         return {
             "status": "healthy",
-            "venue": self.venue.value,
+            "venue": self.venue,
             "connected": True,
             "total_orders": total_orders,
             "active_orders": active_orders,

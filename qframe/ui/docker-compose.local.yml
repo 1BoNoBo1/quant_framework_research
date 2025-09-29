@@ -1,0 +1,28 @@
+# Docker Compose simplifié pour QFrame GUI uniquement
+version: '3.8'
+
+services:
+  # QFrame Streamlit GUI
+  qframe-gui:
+    build:
+      context: ./streamlit_app
+      dockerfile: Dockerfile.simple
+    container_name: qframe-gui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - QFRAME_API_URL=http://host.docker.internal:8000
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    networks:
+      - qframe_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  qframe_network:
+    driver: bridge

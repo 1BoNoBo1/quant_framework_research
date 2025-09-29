@@ -1,0 +1,227 @@
+# 📊 Prometheus Monitoring Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-prometheus
+  namespace: qframe
+  labels:
+    app: qframe-prometheus
+    component: monitoring
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qframe-prometheus
+  template:
+    metadata:
+      labels:
+        app: qframe-prometheus
+        component: monitoring
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        command:
+        - /bin/prometheus
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        - --storage.tsdb.retention.time=15d
+        - --web.enable-lifecycle
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        - name: prometheus-storage
+          mountPath: /prometheus
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-storage
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+---
+# 📈 Grafana Dashboard Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-grafana
+  namespace: qframe
+  labels:
+    app: qframe-grafana
+    component: visualization
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qframe-grafana
+  template:
+    metadata:
+      labels:
+        app: qframe-grafana
+        component: visualization
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: GRAFANA_ADMIN_USER
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qframe-secrets
+              key: GRAFANA_ADMIN_PASSWORD
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-provisioning
+          mountPath: /etc/grafana/provisioning
+        - name: grafana-dashboards
+          mountPath: /var/lib/grafana/dashboards
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-pvc
+      - name: grafana-provisioning
+        configMap:
+          name: grafana-provisioning
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+---
+# Services pour Monitoring
+apiVersion: v1
+kind: Service
+metadata:
+  name: qframe-prometheus
+  namespace: qframe
+  labels:
+    app: qframe-prometheus
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: qframe-prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qframe-grafana
+  namespace: qframe
+  labels:
+    app: qframe-grafana
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: qframe-grafana
+---
+# 📊 Prometheus Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: qframe
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    rule_files:
+      - "qframe_rules.yml"
+
+    scrape_configs:
+      - job_name: 'qframe-api'
+        static_configs:
+          - targets: ['qframe-api:8000']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+
+      - job_name: 'qframe-ui'
+        static_configs:
+          - targets: ['qframe-ui:8501']
+        metrics_path: '/metrics'
+        scrape_interval: 30s
+
+      - job_name: 'postgres'
+        static_configs:
+          - targets: ['qframe-postgres:5432']
+        scrape_interval: 60s
+
+      - job_name: 'redis'
+        static_configs:
+          - targets: ['qframe-redis:6379']
+        scrape_interval: 60s
+
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['qframe']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: []
+
+  qframe_rules.yml: |
+    groups:
+      - name: qframe_alerts
+        rules:
+          - alert: QFrameAPIDown
+            expr: up{job="qframe-api"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "QFrame API is down"
+              description: "QFrame API has been down for more than 1 minute"
+
+          - alert: HighMemoryUsage
+            expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High memory usage detected"
+              description: "Container {{ $labels.container }} is using more than 90% of its memory limit"

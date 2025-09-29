@@ -1,118 +1,182 @@
+# 🐳 QFrame Production Docker Compose
+# Infrastructure complète pour déploiement production
+
 version: '3.8'
 
 services:
-  # QFrame API Service
-  qframe-api:
-    build: .
-    ports:
-      - "8000:8000"
-      - "9090:9090"
-    environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql://qframe:qframe@postgres:5432/qframe
-      - REDIS_URL=redis://redis:6379/0
-      - INFLUXDB_URL=http://influxdb:8086
-    depends_on:
-      - postgres
-      - redis
-      - influxdb
-    volumes:
-      - ./qframe:/app/qframe
-    networks:
-      - qframe-network
-
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=qframe
-      - POSTGRES_PASSWORD=qframe
-      - POSTGRES_DB=qframe
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - qframe-network
-
-  # Redis Cache
+  # 🔴 Redis Cache & Session Store
   redis:
     image: redis:7-alpine
+    container_name: qframe-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/data
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - qframe-network
 
-  # InfluxDB Time-series Database
-  influxdb:
-    image: influxdb:2.7-alpine
-    ports:
-      - "8086:8086"
+  # 🗄️ PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: qframe-postgres
+    restart: unless-stopped
     environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=qframe
-      - DOCKER_INFLUXDB_INIT_PASSWORD=qframepassword
-      - DOCKER_INFLUXDB_INIT_ORG=qframe
-      - DOCKER_INFLUXDB_INIT_BUCKET=market_data
+      POSTGRES_DB: qframe
+      POSTGRES_USER: qframe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qframe123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
     volumes:
-      - influxdb-data:/var/lib/influxdb2
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qframe"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - qframe-network
 
-  # Prometheus Monitoring
+  # 🚀 QFrame API Backend
+  qframe-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qframe-api
+    restart: unless-stopped
+    environment:
+      - QFRAME_ENVIRONMENT=production
+      - QFRAME_LOG_LEVEL=INFO
+      - QFRAME_DATABASE_URL=postgresql://qframe:${POSTGRES_PASSWORD:-qframe123}@postgres:5432/qframe
+      - QFRAME_REDIS_URL=redis://redis:6379/0
+      - QFRAME_SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - QFRAME_CORS_ORIGINS=http://localhost:8501,http://qframe-ui:8501
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - qframe-network
+
+  # 🖥️ QFrame UI Streamlit
+  qframe-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: qframe-ui
+    restart: unless-stopped
+    environment:
+      - QFRAME_API_URL=http://qframe-api:8000
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_PORT=8501
+    ports:
+      - "8501:8501"
+    depends_on:
+      qframe-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - qframe-network
+
+  # 📊 Prometheus Monitoring
   prometheus:
     image: prom/prometheus:latest
+    container_name: qframe-prometheus
+    restart: unless-stopped
     ports:
-      - "9091:9090"
+      - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
     networks:
       - qframe-network
 
-  # Grafana Dashboards
+  # 📈 Grafana Dashboard
   grafana:
     image: grafana/grafana:latest
+    container_name: qframe-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=grafana-clock-panel
     volumes:
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-      - grafana-data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
     networks:
       - qframe-network
 
-  # Jaeger Tracing (Optional)
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  # 🔍 Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: qframe-nginx
+    restart: unless-stopped
     ports:
-      - "5775:5775/udp"
-      - "6831:6831/udp"
-      - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"
-      - "14268:14268"
-      - "9411:9411"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - qframe-api
+      - qframe-ui
     networks:
       - qframe-network
 
+# 📂 Volumes persistants
 volumes:
-  postgres-data:
-  redis-data:
-  influxdb-data:
-  prometheus-data:
-  grafana-data:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
 
+# 🌐 Network configuration
 networks:
   qframe-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,56 +1,77 @@
-# Multi-stage Docker build for QFrame
-FROM python:3.11-slim as builder
+# 🐳 QFrame API Backend Dockerfile
+# Multi-stage build pour optimiser la taille de l'image
 
-# Install system dependencies
+# Stage 1: Builder
+FROM python:3.13-slim as builder
+
+# Variables d'environnement pour Python
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Installation des dépendances système pour la compilation
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry==1.7.1
+# Installation de Poetry
+RUN pip install poetry==1.8.3
 
-# Set working directory
+# Configuration Poetry
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VENV_IN_PROJECT=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+# Copie des fichiers de configuration
 WORKDIR /app
-
-# Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+# Installation des dépendances
+RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
 
-# Production stage
-FROM python:3.11-slim
+# Stage 2: Runtime
+FROM python:3.13-slim as runtime
 
-# Install runtime dependencies
+# Variables d'environnement pour l'application
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH" \
+    QFRAME_ENVIRONMENT=production
+
+# Installation des dépendances système runtime
 RUN apt-get update && apt-get install -y \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Create non-root user
-RUN useradd -m -u 1000 qframe
+# Création d'un utilisateur non-root pour la sécurité
+RUN groupadd -r qframe && useradd -r -g qframe qframe
 
-# Set working directory
+# Création des répertoires de l'application
 WORKDIR /app
+RUN mkdir -p /app/logs /app/data && \
+    chown -R qframe:qframe /app
 
-# Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copie de l'environnement virtuel depuis le builder
+COPY --from=builder --chown=qframe:qframe /app/.venv /app/.venv
 
-# Copy application code
+# Copie du code source
 COPY --chown=qframe:qframe . .
 
-# Switch to non-root user
-USER qframe
+# Installation du package QFrame
+RUN .venv/bin/pip install -e .
 
-# Expose ports
-EXPOSE 8000 8001 9090
+# Exposition du port
+EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command
-CMD ["uvicorn", "qframe.infrastructure.api.rest:app", "--host", "0.0.0.0", "--port", "8000"]
+# Switch vers l'utilisateur non-root
+USER qframe
+
+# Point d'entrée
+CMD ["python", "start_api.py", "--host", "0.0.0.0", "--port", "8000"]

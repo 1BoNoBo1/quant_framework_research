@@ -1,0 +1,456 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "🚀 QFrame Trading Dashboard",
+    "tags": ["qframe", "trading", "portfolio"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "schemaVersion": 16,
+    "version": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "💰 Portfolio Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "qframe:total_portfolio_value",
+            "format": "time_series",
+            "legendFormat": "Portfolio Value ($)"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"],
+            "fields": "",
+            "values": false
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "📈 PnL (5min)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "qframe:portfolio_pnl_5m",
+            "format": "time_series",
+            "legendFormat": "PnL Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "line",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"],
+            "fields": "",
+            "values": false
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": -5},
+                {"color": "yellow", "value": 0},
+                {"color": "green", "value": 2}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "⚡ Trade Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "qframe:trade_success_rate_5m",
+            "format": "time_series",
+            "legendFormat": "Success Rate"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"],
+            "fields": "",
+            "values": false
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 1,
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 70},
+                {"color": "green", "value": 85}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "🏃 Avg Trade Latency",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "qframe:avg_trade_latency_5m",
+            "format": "time_series",
+            "legendFormat": "Latency"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "line",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["lastNotNull"],
+            "fields": "",
+            "values": false
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 3,
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 2}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "📊 Portfolio Balance Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "qframe_portfolio_balance_usd",
+            "format": "time_series",
+            "legendFormat": "Portfolio {{ $labels.portfolio_id }}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "xAxis": {
+          "show": true
+        },
+        "yAxes": [
+          {
+            "label": "Balance (USD)",
+            "show": true,
+            "min": null
+          }
+        ],
+        "legend": {
+          "show": true,
+          "values": true,
+          "current": true
+        }
+      },
+      {
+        "id": 6,
+        "title": "🎯 Active Strategies Performance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "qframe_strategy_pnl_total",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "options": {
+          "showHeader": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Value"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "currencyUSD"
+                },
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 7,
+        "title": "🔥 Trade Execution Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(qframe_trades_total[5m])",
+            "format": "time_series",
+            "legendFormat": "Trades/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 0,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Trades per second",
+            "show": true,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "🌐 API Response Times",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(qframe_http_request_duration_seconds_bucket[5m]))",
+            "format": "time_series",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(qframe_http_request_duration_seconds_bucket[5m]))",
+            "format": "time_series",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 8,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Response Time (s)",
+            "show": true,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "💾 System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{container=~\"qframe-.*\"}[5m]) * 100",
+            "format": "time_series",
+            "legendFormat": "CPU {{ $labels.container }}"
+          },
+          {
+            "expr": "(container_memory_usage_bytes{container=~\"qframe-.*\"} / container_spec_memory_limit_bytes{container=~\"qframe-.*\"}) * 100",
+            "format": "time_series",
+            "legendFormat": "Memory {{ $labels.container }}"
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 8,
+          "x": 16,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Usage (%)",
+            "show": true,
+            "min": 0,
+            "max": 100
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "📡 Market Data Health",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "time() - qframe_market_data_last_update_timestamp",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 18
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Value"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "s"
+                },
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "green", "value": 0},
+                      {"color": "yellow", "value": 60},
+                      {"color": "red", "value": 300}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 11,
+        "title": "⚠️ Recent Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ALERTS{alertname=~\"QFrame.*\"}",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 18
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "portfolio",
+          "type": "query",
+          "query": "label_values(qframe_portfolio_balance_usd, portfolio_id)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "strategy",
+          "type": "query",
+          "query": "label_values(qframe_strategy_pnl_total, strategy_name)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "QFrame Alerts",
+          "datasource": "Prometheus",
+          "expr": "ALERTS{alertname=~\"QFrame.*\", alertstate=\"firing\"}",
+          "titleFormat": "{{ $labels.alertname }}",
+          "textFormat": "{{ $labels.description }}",
+          "iconColor": "red"
+        }
+      ]
+    }
+  }
+}

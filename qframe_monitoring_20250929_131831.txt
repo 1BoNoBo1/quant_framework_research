@@ -1,0 +1,25 @@
+
+🔍 RAPPORT MONITORING QFRAME
+========================================
+📅 Date: 2025-09-29 13:18:31
+⏰ Durée session: 0.5 minutes
+📊 Total métriques: 15
+🚨 Total alertes: 2
+
+📈 PERFORMANCE:
+   💰 Return final: 3.39%
+   ⭐ Sharpe final: 1.973
+   📊 Return moyen: 1.75%
+   📈 Meilleur return: 3.39%
+   📉 Pire return: -0.06%
+
+🖥️ SYSTÈME:
+   📊 Métriques/minute: 15.0
+   🚨 Alertes/minute: 2.0
+
+✅ FONCTIONNALITÉS VALIDÉES:
+   • Collecte métriques temps réel
+   • Système d'alertes automatiques
+   • Dashboard live
+   • Analyse de performance
+   • Génération rapports

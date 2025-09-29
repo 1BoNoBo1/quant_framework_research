@@ -17,16 +17,10 @@ from ..entities.order import (
     Order, OrderStatus, OrderType, OrderSide, TimeInForce, OrderPriority,
     OrderExecution, create_market_order, create_limit_order
 )
-from ..value_objects.position import Position
+from ..entities.position import Position
 
 
-class ExecutionVenue(str, Enum):
-    """Venues d'exécution disponibles"""
-    BINANCE = "binance"
-    COINBASE = "coinbase"
-    KRAKEN = "kraken"
-    DARK_POOL = "dark_pool"
-    INTERNAL = "internal"
+# ExecutionVenue is now just str - venues are represented as strings
 
 
 class RoutingStrategy(str, Enum):
@@ -51,7 +45,7 @@ class ExecutionAlgorithm(str, Enum):
 @dataclass
 class VenueQuote:
     """Quote d'un venue pour un symbole"""
-    venue: ExecutionVenue
+    venue: str
     symbol: str
     bid_price: Decimal
     ask_price: Decimal
@@ -77,7 +71,7 @@ class VenueQuote:
 class ExecutionPlan:
     """Plan d'exécution pour un ordre"""
     order_id: str
-    target_venues: List[ExecutionVenue]
+    target_venues: List[str]
     routing_strategy: RoutingStrategy
     execution_algorithm: ExecutionAlgorithm
     estimated_cost: Decimal
@@ -89,7 +83,7 @@ class ExecutionPlan:
     def to_dict(self) -> Dict[str, any]:
         return {
             "order_id": self.order_id,
-            "target_venues": [venue.value for venue in self.target_venues],
+            "target_venues": self.target_venues,
             "routing_strategy": self.routing_strategy.value,
             "execution_algorithm": self.execution_algorithm.value,
             "estimated_cost": float(self.estimated_cost),
@@ -139,9 +133,9 @@ class ExecutionService:
 
     def __init__(self):
         self.supported_venues = {
-            ExecutionVenue.BINANCE: {"commission_rate": Decimal("0.001"), "min_size": Decimal("0.01")},
-            ExecutionVenue.COINBASE: {"commission_rate": Decimal("0.005"), "min_size": Decimal("0.001")},
-            ExecutionVenue.KRAKEN: {"commission_rate": Decimal("0.0025"), "min_size": Decimal("0.001")}
+            "binance": {"commission_rate": Decimal("0.001"), "min_size": Decimal("0.01")},
+            "coinbase": {"commission_rate": Decimal("0.005"), "min_size": Decimal("0.001")},
+            "kraken": {"commission_rate": Decimal("0.0025"), "min_size": Decimal("0.001")}
         }
 
     # === Smart Order Routing ===
@@ -149,7 +143,7 @@ class ExecutionService:
     def create_execution_plan(
         self,
         order: Order,
-        market_data: Dict[ExecutionVenue, VenueQuote],
+        market_data: Dict[str, VenueQuote],
         routing_strategy: RoutingStrategy = RoutingStrategy.BEST_PRICE,
         execution_algorithm: ExecutionAlgorithm = ExecutionAlgorithm.IMMEDIATE
     ) -> ExecutionPlan:
@@ -195,9 +189,9 @@ class ExecutionService:
     def _select_venues(
         self,
         order: Order,
-        market_data: Dict[ExecutionVenue, VenueQuote],
+        market_data: Dict[str, VenueQuote],
         strategy: RoutingStrategy
-    ) -> List[ExecutionVenue]:
+    ) -> List[str]:
         """Sélectionne les venues optimales selon la stratégie"""
         available_venues = []
 
@@ -269,8 +263,8 @@ class ExecutionService:
     def _estimate_execution_cost(
         self,
         order: Order,
-        market_data: Dict[ExecutionVenue, VenueQuote],
-        target_venues: List[ExecutionVenue]
+        market_data: Dict[str, VenueQuote],
+        target_venues: List[str]
     ) -> Decimal:
         """Estime le coût total d'exécution"""
         if not target_venues:
@@ -340,7 +334,7 @@ class ExecutionService:
     def _create_slice_instructions(
         self,
         order: Order,
-        target_venues: List[ExecutionVenue],
+        target_venues: List[str],
         algorithm: ExecutionAlgorithm
     ) -> List[Dict[str, any]]:
         """Crée les instructions de découpage d'ordre"""
@@ -350,7 +344,7 @@ class ExecutionService:
             # Exécution immédiate sur le meilleur venue
             if target_venues:
                 instructions.append({
-                    "venue": target_venues[0].value,
+                    "venue": target_venues[0],
                     "quantity": float(order.quantity),
                     "timing": "immediate",
                     "order_type": "market"
@@ -363,7 +357,7 @@ class ExecutionService:
 
             for i in range(num_slices):
                 instructions.append({
-                    "venue": target_venues[i % len(target_venues)].value if target_venues else "binance",
+                    "venue": target_venues[i % len(target_venues)] if target_venues else "binance",
                     "quantity": float(slice_quantity),
                     "timing": f"delay_{i * 5}_minutes",
                     "order_type": "limit"
@@ -375,7 +369,7 @@ class ExecutionService:
 
             for i in range(5):
                 instructions.append({
-                    "venue": target_venues[i % len(target_venues)].value if target_venues else "binance",
+                    "venue": target_venues[i % len(target_venues)] if target_venues else "binance",
                     "quantity": float(iceberg_size),
                     "timing": f"after_previous_fill",
                     "order_type": "limit",
@@ -389,7 +383,7 @@ class ExecutionService:
             for i, volume_pct in enumerate(volume_profile):
                 slice_quantity = order.quantity * Decimal(str(volume_pct))
                 instructions.append({
-                    "venue": target_venues[i % len(target_venues)].value if target_venues else "binance",
+                    "venue": target_venues[i % len(target_venues)] if target_venues else "binance",
                     "quantity": float(slice_quantity),
                     "timing": f"volume_window_{i}",
                     "order_type": "limit"
@@ -410,10 +404,11 @@ class ExecutionService:
         if order.notional_value > Decimal("1000000"):  # Limite de 1M
             return False
 
-        # Vérification des heures de marché (simplifiée)
-        now = datetime.utcnow()
-        if now.weekday() > 4:  # Pas le weekend
-            return False
+        # Vérification des heures de marché (simplifiée) - crypto fonctionne 24/7
+        # Pour les actions, on vérifierait les heures de marché
+        # now = datetime.utcnow()
+        # if now.weekday() > 4:  # Pas le weekend pour les actions
+        #     return False
 
         # Toutes les vérifications passées
         return True
@@ -424,7 +419,7 @@ class ExecutionService:
         self,
         order: Order,
         execution_plan: ExecutionPlan,
-        market_data: Dict[ExecutionVenue, VenueQuote]
+        market_data: Dict[str, VenueQuote]
     ) -> List[OrderExecution]:
         """
         Exécute un ordre selon son plan d'exécution.
@@ -466,7 +461,7 @@ class ExecutionService:
         self,
         order: Order,
         execution_plan: ExecutionPlan,
-        market_data: Dict[ExecutionVenue, VenueQuote]
+        market_data: Dict[str, VenueQuote]
     ) -> List[OrderExecution]:
         """Exécute immédiatement sur le meilleur venue"""
         executions = []
@@ -493,7 +488,7 @@ class ExecutionService:
                 executed_quantity=executed_quantity,
                 execution_price=execution_price,
                 commission=commission,
-                venue=venue.value,
+                venue=venue,
                 liquidity_flag="taker"  # Market order est généralement taker
             )
             executions.append(execution)
@@ -504,7 +499,7 @@ class ExecutionService:
         self,
         order: Order,
         execution_plan: ExecutionPlan,
-        market_data: Dict[ExecutionVenue, VenueQuote]
+        market_data: Dict[str, VenueQuote]
     ) -> List[OrderExecution]:
         """Simule l'exécution TWAP (simplifié pour démo)"""
         executions = []
@@ -516,7 +511,7 @@ class ExecutionService:
                 break
 
             venue_name = instruction["venue"]
-            venue = ExecutionVenue(venue_name)
+            venue = venue_name
 
             if venue not in market_data or venue not in self.supported_venues:
                 continue
@@ -546,7 +541,7 @@ class ExecutionService:
                 executed_quantity=slice_quantity,
                 execution_price=execution_price,
                 commission=commission,
-                venue=venue.value,
+                venue=venue,
                 liquidity_flag="maker" if i > 0 else "taker"  # Premier slice taker, autres maker
             )
             executions.append(execution)
@@ -559,7 +554,7 @@ class ExecutionService:
         self,
         order: Order,
         execution_plan: ExecutionPlan,
-        market_data: Dict[ExecutionVenue, VenueQuote]
+        market_data: Dict[str, VenueQuote]
     ) -> List[OrderExecution]:
         """Simule l'exécution iceberg"""
         executions = []
@@ -570,7 +565,7 @@ class ExecutionService:
                 break
 
             venue_name = instruction["venue"]
-            venue = ExecutionVenue(venue_name)
+            venue = venue_name
 
             if venue not in market_data or venue not in self.supported_venues:
                 continue
@@ -600,7 +595,7 @@ class ExecutionService:
                     executed_quantity=slice_size,
                     execution_price=execution_price,
                     commission=commission,
-                    venue=venue.value,
+                    venue=venue,
                     liquidity_flag="maker"  # Iceberg généralement maker
                 )
                 executions.append(execution)

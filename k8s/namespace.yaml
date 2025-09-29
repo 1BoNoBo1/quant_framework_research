@@ -1,0 +1,42 @@
+# 🌐 QFrame Kubernetes Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qframe
+  labels:
+    name: qframe
+    environment: production
+    project: quantitative-framework
+---
+# 🔐 Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: qframe-quota
+  namespace: qframe
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    persistentvolumeclaims: "10"
+---
+# 🚧 Network Policy (Optional - for security)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qframe-network-policy
+  namespace: qframe
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: qframe
+  egress:
+  - {}

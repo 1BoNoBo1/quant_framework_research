@@ -8,26 +8,30 @@ basé sur les meilleures pratiques Data Science de Claude Flow.
 
 import asyncio
 import concurrent.futures
-from typing import List, Dict, Any, Callable, Optional, Union
-from functools import wraps
-import pandas as pd
-import numpy as np
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import logging
-from dataclasses import dataclass
 import time
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from dataclasses import dataclass
+from functools import wraps
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+
+import numpy as np
+import pandas as pd
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ProcessingTask:
     """Tâche de traitement parallèle."""
+
     name: str
-    function: Callable
+    function: Callable[..., Any]
     data: Any
     priority: int = 1
     timeout: Optional[float] = None
-    dependencies: List[str] = None
+    dependencies: Optional[List[str]] = None
+
 
 class ParallelProcessor:
     """
@@ -38,22 +42,23 @@ class ParallelProcessor:
     """
 
     def __init__(
-        self,
-        max_workers: int = 4,
-        use_processes: bool = True,
-        chunk_size: int = 1000
+        self, max_workers: int = 4, use_processes: bool = True, chunk_size: int = 1000
     ):
         self.max_workers = max_workers
         self.use_processes = use_processes
         self.chunk_size = chunk_size
-        self.executor = ProcessPoolExecutor(max_workers) if use_processes else ThreadPoolExecutor(max_workers)
+        self.executor = (
+            ProcessPoolExecutor(max_workers)
+            if use_processes
+            else ThreadPoolExecutor(max_workers)
+        )
         self.task_registry: Dict[str, ProcessingTask] = {}
 
     async def process_parallel_features(
         self,
         data: pd.DataFrame,
-        feature_functions: List[Callable],
-        chunk_data: bool = True
+        feature_functions: List[Callable[..., Any]],
+        chunk_data: bool = True,
     ) -> pd.DataFrame:
         """
         Traitement parallèle des features pour trading quantitatif.
@@ -66,7 +71,9 @@ class ParallelProcessor:
         Returns:
             DataFrame avec toutes les features calculées en parallèle
         """
-        logger.info(f"Début traitement parallèle de {len(feature_functions)} features sur {len(data)} points")
+        logger.info(
+            f"Début traitement parallèle de {len(feature_functions)} features sur {len(data)} points"
+        )
 
         if chunk_data and len(data) > self.chunk_size:
             return await self._process_chunked_features(data, feature_functions)
@@ -74,9 +81,7 @@ class ParallelProcessor:
             return await self._process_features_batch(data, feature_functions)
 
     async def _process_features_batch(
-        self,
-        data: pd.DataFrame,
-        feature_functions: List[Callable]
+        self, data: pd.DataFrame, feature_functions: List[Callable[..., Any]]
     ) -> pd.DataFrame:
         """Traitement batch des features."""
 
@@ -86,10 +91,7 @@ class ParallelProcessor:
         tasks = []
         for func in feature_functions:
             task = loop.run_in_executor(
-                self.executor,
-                self._safe_feature_calculation,
-                func,
-                data.copy()
+                self.executor, self._safe_feature_calculation, func, data.copy()
             )
             tasks.append(task)
 
@@ -100,24 +102,28 @@ class ParallelProcessor:
         combined_features = data.copy()
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                logger.warning(f"Erreur dans feature {feature_functions[i].__name__}: {result}")
+                logger.warning(
+                    f"Erreur dans feature {feature_functions[i].__name__}: {result}"
+                )
             elif isinstance(result, pd.DataFrame):
                 # Merge des nouvelles colonnes
                 for col in result.columns:
                     if col not in combined_features.columns:
                         combined_features[col] = result[col]
 
-        logger.info(f"Traitement parallèle terminé: {len(combined_features.columns)} colonnes")
+        logger.info(
+            f"Traitement parallèle terminé: {len(combined_features.columns)} colonnes"
+        )
         return combined_features
 
     async def _process_chunked_features(
-        self,
-        data: pd.DataFrame,
-        feature_functions: List[Callable]
+        self, data: pd.DataFrame, feature_functions: List[Callable[..., Any]]
     ) -> pd.DataFrame:
         """Traitement par chunks pour gros datasets."""
 
-        chunks = [data[i:i+self.chunk_size] for i in range(0, len(data), self.chunk_size)]
+        chunks = [
+            data[i : i + self.chunk_size] for i in range(0, len(data), self.chunk_size)
+        ]
         logger.info(f"Traitement en {len(chunks)} chunks de {self.chunk_size} lignes")
 
         # Traiter chaque chunk en parallèle
@@ -132,9 +138,7 @@ class ParallelProcessor:
         return pd.concat(processed_chunks, ignore_index=True)
 
     def _safe_feature_calculation(
-        self,
-        feature_func: Callable,
-        data: pd.DataFrame
+        self, feature_func: Callable, data: pd.DataFrame
     ) -> pd.DataFrame:
         """Calcul sécurisé de feature avec gestion d'erreurs."""
         try:
@@ -162,31 +166,51 @@ class ParallelProcessor:
             return pd.DataFrame(index=data.index)
 
     async def parallel_risk_metrics(
-        self,
-        returns: pd.Series,
-        confidence_levels: List[float] = [0.95, 0.99]
+        self, returns: pd.Series, confidence_levels: List[float] = [0.95, 0.99]
     ) -> Dict[str, float]:
         """
         Calcul parallèle des métriques de risque.
 
         Implémente les recommendations Claude Flow pour analyse de risque.
         """
-        logger.info(f"Calcul parallèle des métriques de risque sur {len(returns)} returns")
+        logger.info(
+            f"Calcul parallèle des métriques de risque sur {len(returns)} returns"
+        )
 
         loop = asyncio.get_event_loop()
 
         # Définir toutes les métriques à calculer
         risk_tasks = {
-            'var_95': loop.run_in_executor(self.executor, self._calculate_var, returns, 0.95),
-            'var_99': loop.run_in_executor(self.executor, self._calculate_var, returns, 0.99),
-            'cvar_95': loop.run_in_executor(self.executor, self._calculate_cvar, returns, 0.95),
-            'cvar_99': loop.run_in_executor(self.executor, self._calculate_cvar, returns, 0.99),
-            'max_drawdown': loop.run_in_executor(self.executor, self._calculate_max_drawdown, returns),
-            'sharpe_ratio': loop.run_in_executor(self.executor, self._calculate_sharpe, returns),
-            'sortino_ratio': loop.run_in_executor(self.executor, self._calculate_sortino, returns),
-            'calmar_ratio': loop.run_in_executor(self.executor, self._calculate_calmar, returns),
-            'skewness': loop.run_in_executor(self.executor, self._calculate_skewness, returns),
-            'kurtosis': loop.run_in_executor(self.executor, self._calculate_kurtosis, returns)
+            "var_95": loop.run_in_executor(
+                self.executor, self._calculate_var, returns, 0.95
+            ),
+            "var_99": loop.run_in_executor(
+                self.executor, self._calculate_var, returns, 0.99
+            ),
+            "cvar_95": loop.run_in_executor(
+                self.executor, self._calculate_cvar, returns, 0.95
+            ),
+            "cvar_99": loop.run_in_executor(
+                self.executor, self._calculate_cvar, returns, 0.99
+            ),
+            "max_drawdown": loop.run_in_executor(
+                self.executor, self._calculate_max_drawdown, returns
+            ),
+            "sharpe_ratio": loop.run_in_executor(
+                self.executor, self._calculate_sharpe, returns
+            ),
+            "sortino_ratio": loop.run_in_executor(
+                self.executor, self._calculate_sortino, returns
+            ),
+            "calmar_ratio": loop.run_in_executor(
+                self.executor, self._calculate_calmar, returns
+            ),
+            "skewness": loop.run_in_executor(
+                self.executor, self._calculate_skewness, returns
+            ),
+            "kurtosis": loop.run_in_executor(
+                self.executor, self._calculate_kurtosis, returns
+            ),
         }
 
         # Exécuter tous les calculs en parallèle
@@ -208,7 +232,7 @@ class ParallelProcessor:
         self,
         strategy_func: Callable,
         data_chunks: List[pd.DataFrame],
-        parameters: Dict[str, Any]
+        parameters: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
         Backtesting parallèle sur multiple périodes/paramètres.
@@ -226,7 +250,7 @@ class ParallelProcessor:
                 strategy_func,
                 chunk,
                 parameters,
-                f"period_{i}"
+                f"period_{i}",
             )
             backtest_tasks.append(task)
 
@@ -244,7 +268,7 @@ class ParallelProcessor:
         strategy_func: Callable,
         data: pd.DataFrame,
         parameters: Dict[str, Any],
-        period_name: str
+        period_name: str,
     ) -> Dict[str, Any]:
         """Exécution d'un backtest unique."""
         try:
@@ -252,32 +276,44 @@ class ParallelProcessor:
             result = strategy_func(data, parameters)
             duration = time.time() - start_time
 
-            result['period_name'] = period_name
-            result['execution_time'] = duration
+            result["period_name"] = period_name
+            result["execution_time"] = duration
 
             return result
 
         except Exception as e:
             logger.error(f"Erreur backtest {period_name}: {str(e)}")
-            return {'period_name': period_name, 'error': str(e)}
+            return {"period_name": period_name, "error": str(e)}
 
-    def _aggregate_backtest_results(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _aggregate_backtest_results(
+        self, results: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """Agrégation des résultats de backtest."""
-        successful_results = [r for r in results if not isinstance(r, Exception) and 'error' not in r]
+        successful_results = [
+            r for r in results if not isinstance(r, Exception) and "error" not in r
+        ]
 
         if not successful_results:
-            return {'error': 'Tous les backtests ont échoué'}
+            return {"error": "Tous les backtests ont échoué"}
 
         # Calculer les statistiques agrégées
         aggregated = {
-            'total_periods': len(results),
-            'successful_periods': len(successful_results),
-            'failed_periods': len(results) - len(successful_results),
-            'avg_total_return': np.mean([r.get('total_return', 0) for r in successful_results]),
-            'avg_sharpe_ratio': np.mean([r.get('sharpe_ratio', 0) for r in successful_results]),
-            'avg_max_drawdown': np.mean([r.get('max_drawdown', 0) for r in successful_results]),
-            'std_total_return': np.std([r.get('total_return', 0) for r in successful_results]),
-            'individual_results': successful_results
+            "total_periods": len(results),
+            "successful_periods": len(successful_results),
+            "failed_periods": len(results) - len(successful_results),
+            "avg_total_return": np.mean(
+                [r.get("total_return", 0) for r in successful_results]
+            ),
+            "avg_sharpe_ratio": np.mean(
+                [r.get("sharpe_ratio", 0) for r in successful_results]
+            ),
+            "avg_max_drawdown": np.mean(
+                [r.get("max_drawdown", 0) for r in successful_results]
+            ),
+            "std_total_return": np.std(
+                [r.get("total_return", 0) for r in successful_results]
+            ),
+            "individual_results": successful_results,
         }
 
         return aggregated
@@ -299,19 +335,23 @@ class ParallelProcessor:
         drawdown = (cumulative - rolling_max) / rolling_max
         return drawdown.min()
 
-    def _calculate_sharpe(self, returns: pd.Series, risk_free_rate: float = 0.0) -> float:
+    def _calculate_sharpe(
+        self, returns: pd.Series, risk_free_rate: float = 0.0
+    ) -> float:
         """Sharpe Ratio."""
         excess_returns = returns - risk_free_rate
         if excess_returns.std() == 0:
             return 0.0
         return excess_returns.mean() / excess_returns.std() * np.sqrt(252)
 
-    def _calculate_sortino(self, returns: pd.Series, risk_free_rate: float = 0.0) -> float:
+    def _calculate_sortino(
+        self, returns: pd.Series, risk_free_rate: float = 0.0
+    ) -> float:
         """Sortino Ratio."""
         excess_returns = returns - risk_free_rate
         downside_returns = excess_returns[excess_returns < 0]
         if len(downside_returns) == 0 or downside_returns.std() == 0:
-            return float('inf') if excess_returns.mean() > 0 else 0.0
+            return float("inf") if excess_returns.mean() > 0 else 0.0
         return excess_returns.mean() / downside_returns.std() * np.sqrt(252)
 
     def _calculate_calmar(self, returns: pd.Series) -> float:
@@ -338,42 +378,51 @@ class ParallelProcessor:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cleanup()
 
+
 # Décorateurs pour parallélisation automatique
 def parallel_task(task_name: str, max_workers: int = 4):
     """Décorateur pour paralléliser automatiquement une fonction."""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             with ParallelProcessor(max_workers=max_workers) as processor:
                 loop = asyncio.get_event_loop()
                 return await loop.run_in_executor(
-                    processor.executor,
-                    func,
-                    *args,
-                    **kwargs
+                    processor.executor, func, *args, **kwargs
                 )
+
         return wrapper
+
     return decorator
+
 
 # Factory functions pour usage simplifié
 def create_parallel_processor(
-    strategy_type: str = "trading",
-    max_workers: Optional[int] = None
+    strategy_type: str = "trading", max_workers: Optional[int] = None
 ) -> ParallelProcessor:
     """Factory pour créer un processeur adapté au type de stratégie."""
 
     if max_workers is None:
         import multiprocessing
+
         max_workers = min(multiprocessing.cpu_count(), 8)
 
     # Utiliser les threads par défaut pour éviter les problèmes de sérialisation
     # avec pandas DataFrames qui contiennent des verrous
     if strategy_type == "high_frequency":
-        return ParallelProcessor(max_workers=max_workers, use_processes=False, chunk_size=500)
+        return ParallelProcessor(
+            max_workers=max_workers, use_processes=False, chunk_size=500
+        )
     elif strategy_type == "research":
-        return ParallelProcessor(max_workers=max_workers, use_processes=False, chunk_size=2000)
+        return ParallelProcessor(
+            max_workers=max_workers, use_processes=False, chunk_size=2000
+        )
     else:  # trading
-        return ParallelProcessor(max_workers=max_workers, use_processes=False, chunk_size=1000)
+        return ParallelProcessor(
+            max_workers=max_workers, use_processes=False, chunk_size=1000
+        )
+
 
 def create_safe_parallel_processor(max_workers: int = 4) -> ParallelProcessor:
     """
@@ -382,50 +431,56 @@ def create_safe_parallel_processor(max_workers: int = 4) -> ParallelProcessor:
     Évite tous les problèmes de sérialisation en utilisant ThreadPoolExecutor
     au lieu de ProcessPoolExecutor.
     """
-    return ParallelProcessor(max_workers=max_workers, use_processes=False, chunk_size=1000)
+    return ParallelProcessor(
+        max_workers=max_workers, use_processes=False, chunk_size=1000
+    )
+
 
 # Exemples d'usage
 async def example_parallel_features():
     """Exemple d'usage du traitement parallèle de features."""
 
     # Données d'exemple
-    data = pd.DataFrame({
-        'close': np.random.randn(1000).cumsum() + 100,
-        'volume': np.random.randint(1000, 10000, 1000)
-    })
+    data = pd.DataFrame(
+        {
+            "close": np.random.randn(1000).cumsum() + 100,
+            "volume": np.random.randint(1000, 10000, 1000),
+        }
+    )
 
     # Fonctions de features
     def rsi_feature(df):
         """Feature RSI."""
-        delta = df['close'].diff()
+        delta = df["close"].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
-        df['rsi'] = 100 - (100 / (1 + rs))
-        return df[['rsi']]
+        df["rsi"] = 100 - (100 / (1 + rs))
+        return df[["rsi"]]
 
     def ma_feature(df):
         """Feature Moving Average."""
-        df['ma_20'] = df['close'].rolling(20).mean()
-        df['ma_50'] = df['close'].rolling(50).mean()
-        return df[['ma_20', 'ma_50']]
+        df["ma_20"] = df["close"].rolling(20).mean()
+        df["ma_50"] = df["close"].rolling(50).mean()
+        return df[["ma_20", "ma_50"]]
 
     def vol_feature(df):
         """Feature Volatility."""
-        df['volatility'] = df['close'].pct_change().rolling(20).std()
-        return df[['volatility']]
+        df["volatility"] = df["close"].pct_change().rolling(20).std()
+        return df[["volatility"]]
 
     # Traitement parallèle
     with create_parallel_processor("trading") as processor:
         result = await processor.process_parallel_features(
-            data,
-            [rsi_feature, ma_feature, vol_feature]
+            data, [rsi_feature, ma_feature, vol_feature]
         )
 
         print(f"Features calculées: {list(result.columns)}")
         return result
 
+
 if __name__ == "__main__":
     # Test du framework
     import asyncio
+
     asyncio.run(example_parallel_features())

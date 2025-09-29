@@ -1,0 +1,93 @@
+# 🏭 Production Patches pour QFrame
+
+# Patch pour augmenter les ressources en production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-api
+spec:
+  replicas: 3  # Plus de réplicas en production
+  template:
+    spec:
+      containers:
+      - name: qframe-api
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        env:
+        - name: QFRAME_LOG_LEVEL
+          value: "INFO"  # Moins de logs en production
+---
+# Patch pour PostgreSQL production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-postgres
+spec:
+  template:
+    spec:
+      containers:
+      - name: postgres
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1000m"
+---
+# Patch pour Redis production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-redis
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "1gb"  # Plus de mémoire en production
+        - --maxmemory-policy
+        - allkeys-lru
+        - --save
+        - "900 1"  # Sauvegarde plus fréquente
+        - --save
+        - "300 10"
+        - --save
+        - "60 10000"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+---
+# Storage classes pour production
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  resources:
+    requests:
+      storage: 100Gi  # Plus d'espace en production
+  storageClassName: fast-ssd-backup  # Classe avec backup automatique
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  resources:
+    requests:
+      storage: 200Gi  # Plus de rétention en production

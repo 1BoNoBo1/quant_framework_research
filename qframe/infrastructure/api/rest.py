@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Any, Union
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, Request, Response, status
+from fastapi import FastAPI, HTTPException, Depends, Request, Response, status, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -95,7 +95,7 @@ class CreatePortfolioRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     initial_cash: float = Field(..., gt=0)
-    currency: str = Field(default="USD", regex=r"^[A-Z]{3}$")
+    currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
 
 class PortfolioResponse(BaseModel):
     id: str
@@ -112,8 +112,8 @@ class PortfolioResponse(BaseModel):
 # Modèles pour Order
 class CreateOrderRequest(BaseModel):
     symbol: str = Field(..., min_length=1, max_length=20)
-    side: str = Field(..., regex=r"^(buy|sell)$")
-    order_type: str = Field(..., regex=r"^(market|limit|stop|stop_limit)$")
+    side: str = Field(..., pattern=r"^(buy|sell)$")
+    order_type: str = Field(..., pattern=r"^(market|limit|stop|stop_limit)$")
     quantity: float = Field(..., gt=0)
     price: Optional[float] = Field(None, gt=0)
     portfolio_id: str
@@ -153,7 +153,7 @@ class MarketDataResponse(BaseModel):
 
 # Modèles pour WebSocket Streaming
 class StreamSubscriptionRequest(BaseModel):
-    level: str = Field(..., regex=r"^(symbol|type|provider|all)$")
+    level: str = Field(..., pattern=r"^(symbol|type|provider|all)$")
     filter_criteria: Dict[str, Any] = Field(default_factory=dict)
     max_queue_size: int = Field(default=1000, gt=0, le=10000)
 
@@ -339,8 +339,8 @@ class FastAPIService:
         @self.app.get("/api/v1/strategies", response_model=APIResponse, tags=["Strategies"])
         async def list_strategies(
             status: Optional[str] = None,
-            limit: int = Field(default=100, ge=1, le=1000),
-            offset: int = Field(default=0, ge=0)
+            limit: int = Query(default=100, ge=1, le=1000),
+            offset: int = Query(default=0, ge=0)
         ):
             """Lister les stratégies"""
             try:

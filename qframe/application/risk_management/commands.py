@@ -9,7 +9,8 @@ Implémente le pattern CQRS pour la séparation des responsabilités.
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from decimal import Decimal
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import uuid
 
 from ..base.command import Command, CommandHandler, CommandResult
 from ...domain.entities.risk_assessment import RiskAssessment, RiskLevel, RiskType
@@ -30,6 +31,9 @@ class CreateRiskAssessmentCommand(Command):
     positions: Dict[str, Position]
     market_data: Dict[str, MarketData]
     calculation_params: Optional[RiskCalculationParams] = None
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass

@@ -2,15 +2,9 @@
 Core module - Interfaces et abstractions fondamentales
 """
 
-from .interfaces import (
-    DataProvider,
-    FeatureProcessor,
-    Strategy,
-    RiskManager,
-    Portfolio
-)
-from .container import DIContainer
 from .config import FrameworkConfig
+from .container import DIContainer
+from .interfaces import DataProvider, FeatureProcessor, Portfolio, RiskManager, Strategy
 
 __all__ = [
     "DataProvider",
@@ -19,5 +13,5 @@ __all__ = [
     "RiskManager",
     "Portfolio",
     "DIContainer",
-    "FrameworkConfig"
+    "FrameworkConfig",
 ]

@@ -1,0 +1,204 @@
+# 🔬 QFrame Research Notebook Docker Image
+FROM jupyter/datascience-notebook:python-3.11
+
+USER root
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    graphviz \
+    libhdf5-dev \
+    libzmq3-dev \
+    pkg-config \
+    software-properties-common \
+    unzip \
+    vim \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install TA-Lib for technical analysis
+RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
+    tar -xzf ta-lib-0.4.0-src.tar.gz && \
+    cd ta-lib && \
+    ./configure --prefix=/usr && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf ta-lib ta-lib-0.4.0-src.tar.gz
+
+USER ${NB_UID}
+
+# Upgrade pip and install build tools
+RUN pip install --upgrade pip setuptools wheel
+
+# Core scientific computing
+RUN pip install --no-cache-dir \
+    numpy==1.26.* \
+    pandas==2.1.* \
+    scipy==1.11.* \
+    scikit-learn==1.3.* \
+    statsmodels==0.14.*
+
+# Deep Learning frameworks
+RUN pip install --no-cache-dir \
+    torch==2.1.* \
+    tensorflow==2.15.* \
+    jax[cpu]==0.4.* \
+    transformers==4.36.*
+
+# ML & Experimentation
+RUN pip install --no-cache-dir \
+    mlflow==2.9.* \
+    optuna==3.5.* \
+    ray[default]==2.9.* \
+    wandb==0.16.* \
+    lightgbm==4.2.* \
+    xgboost==2.0.* \
+    catboost==1.2.*
+
+# Distributed Computing
+RUN pip install --no-cache-dir \
+    dask[complete]==2023.12.* \
+    distributed==2023.12.* \
+    dask-ml==2023.3.* \
+    pyspark==3.5.*
+
+# Time Series Analysis
+RUN pip install --no-cache-dir \
+    prophet==1.1.* \
+    pmdarima==2.0.* \
+    tslearn==0.6.* \
+    tsfresh==0.20.* \
+    sktime==0.25.*
+
+# Financial Libraries
+RUN pip install --no-cache-dir \
+    yfinance==0.2.* \
+    ccxt==4.2.* \
+    TA-Lib==0.4.* \
+    pyfolio-reloaded==0.9.* \
+    zipline-reloaded==3.0.* \
+    empyrical-reloaded==0.5.* \
+    quantlib==1.33
+
+# Visualization
+RUN pip install --no-cache-dir \
+    plotly==5.18.* \
+    dash==2.14.* \
+    bokeh==3.3.* \
+    altair==5.2.* \
+    seaborn==0.13.* \
+    holoviews==1.18.* \
+    panel==1.3.*
+
+# Data Engineering
+RUN pip install --no-cache-dir \
+    pyarrow==14.0.* \
+    fastparquet==2023.10.* \
+    apache-airflow==2.8.* \
+    prefect==2.14.* \
+    kedro==0.19.* \
+    great-expectations==0.18.*
+
+# Database Connectivity
+RUN pip install --no-cache-dir \
+    sqlalchemy==2.0.* \
+    psycopg2-binary==2.9.* \
+    pymongo==4.6.* \
+    redis==5.0.* \
+    elasticsearch==8.11.* \
+    influxdb-client==1.39.*
+
+# Feature Engineering
+RUN pip install --no-cache-dir \
+    featuretools==1.28.* \
+    feature-engine==1.6.* \
+    category-encoders==2.6.*
+
+# AutoML
+RUN pip install --no-cache-dir \
+    autogluon==1.0.* \
+    flaml==2.1.* \
+    auto-sklearn==0.15.*
+
+# Backtesting
+RUN pip install --no-cache-dir \
+    backtrader==1.9.* \
+    bt==0.2.* \
+    vectorbt==0.26.*
+
+# Reinforcement Learning
+RUN pip install --no-cache-dir \
+    gym==0.26.* \
+    stable-baselines3==2.2.* \
+    tensorforce==0.6.*
+
+# NLP for news analysis
+RUN pip install --no-cache-dir \
+    nltk==3.8.* \
+    spacy==3.7.* \
+    gensim==4.3.* \
+    textblob==0.17.*
+
+# Utilities
+RUN pip install --no-cache-dir \
+    python-dotenv==1.0.* \
+    typer==0.9.* \
+    rich==13.7.* \
+    tqdm==4.66.* \
+    joblib==1.3.* \
+    numba==0.58.* \
+    bottleneck==1.3.*
+
+# Jupyter Extensions
+RUN pip install --no-cache-dir \
+    jupyterlab-git==0.50.* \
+    jupyterlab-lsp==5.0.* \
+    jupyter-resource-usage==1.0.* \
+    nbdime==4.0.* \
+    jupyter-dash==0.4.*
+
+# Install QFrame (local development)
+COPY --chown=${NB_UID}:${NB_GID} . /tmp/qframe
+RUN pip install -e /tmp/qframe
+
+# JupyterLab settings
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager \
+    @jupyterlab/git \
+    @jupyterlab/debugger \
+    @jupyterlab/toc
+
+# Create work directories
+USER root
+RUN mkdir -p /home/${NB_USER}/notebooks \
+    /home/${NB_USER}/data \
+    /home/${NB_USER}/models \
+    /home/${NB_USER}/results \
+    && chown -R ${NB_UID}:${NB_GID} /home/${NB_USER}
+
+USER ${NB_UID}
+
+# Set up environment
+ENV PYTHONPATH=/home/${NB_USER}:/tmp/qframe:$PYTHONPATH
+ENV JUPYTER_ENABLE_LAB=yes
+
+WORKDIR /home/${NB_USER}
+
+# Startup script
+COPY --chown=${NB_UID}:${NB_GID} <<EOF /home/${NB_USER}/startup.py
+import warnings
+warnings.filterwarnings('ignore')
+
+print("🚀 QFrame Research Environment Ready!")
+print("📊 Available frameworks: PyTorch, TensorFlow, JAX")
+print("🔬 ML platforms: MLflow, Optuna, Ray")
+print("📈 Financial libs: ccxt, TA-Lib, zipline")
+print("💡 Run 'import qframe' to get started")
+EOF
+
+# Default command
+CMD ["start-notebook.sh"]

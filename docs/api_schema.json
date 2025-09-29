@@ -1,0 +1,4253 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "QFrame API",
+    "description": "Backend API pour le framework de trading quantitatif QFrame",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/market-data/symbols": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Supported Symbols",
+        "description": "R\u00e9cup\u00e8re la liste des symboles support\u00e9s.",
+        "operationId": "get_supported_symbols_api_v1_market_data_symbols_get",
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exchange sp\u00e9cifique",
+              "title": "Exchange"
+            },
+            "description": "Exchange sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/price/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Current Price",
+        "description": "R\u00e9cup\u00e8re le prix actuel d'un symbole.",
+        "operationId": "get_current_price_api_v1_market_data_price__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/prices": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Multiple Prices",
+        "description": "R\u00e9cup\u00e8re les prix de plusieurs symboles.",
+        "operationId": "get_multiple_prices_api_v1_market_data_prices_get",
+        "parameters": [
+          {
+            "name": "symbols",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Symboles s\u00e9par\u00e9s par des virgules",
+              "title": "Symbols"
+            },
+            "description": "Symboles s\u00e9par\u00e9s par des virgules"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/ohlcv/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Ohlcv Data",
+        "description": "R\u00e9cup\u00e8re les donn\u00e9es OHLCV pour un symbole.",
+        "operationId": "get_ohlcv_data_api_v1_market_data_ohlcv__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "timeframe",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TimeframeEnum",
+              "description": "Timeframe",
+              "default": "1h"
+            },
+            "description": "Timeframe"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Nombre de bougies",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Nombre de bougies"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/ticker/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Ticker Data",
+        "description": "R\u00e9cup\u00e8re les donn\u00e9es ticker compl\u00e8tes pour un symbole.",
+        "operationId": "get_ticker_data_api_v1_market_data_ticker__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/depth/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Order Book",
+        "description": "R\u00e9cup\u00e8re le carnet d'ordres pour un symbole.",
+        "operationId": "get_order_book_api_v1_market_data_depth__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 5,
+              "description": "Nombre de niveaux",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Nombre de niveaux"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/trades/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Recent Trades",
+        "description": "R\u00e9cup\u00e8re les trades r\u00e9cents pour un symbole.",
+        "operationId": "get_recent_trades_api_v1_market_data_trades__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Nombre de trades",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Nombre de trades"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/exchanges": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Supported Exchanges",
+        "description": "R\u00e9cup\u00e8re la liste des exchanges support\u00e9s.",
+        "operationId": "get_supported_exchanges_api_v1_market_data_exchanges_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/status": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Market Status",
+        "description": "R\u00e9cup\u00e8re le statut des march\u00e9s.",
+        "operationId": "get_market_status_api_v1_market_data_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/bulk": {
+      "post": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Bulk Market Data",
+        "description": "R\u00e9cup\u00e8re des donn\u00e9es de march\u00e9 en bulk.",
+        "operationId": "get_bulk_market_data_api_v1_market_data_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market-data/stats/{symbol}": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Get Market Stats",
+        "description": "R\u00e9cup\u00e8re les statistiques de march\u00e9 pour un symbole.",
+        "operationId": "get_market_stats_api_v1_market_data_stats__symbol__get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(1h|4h|24h|7d|30d)$",
+              "description": "P\u00e9riode pour les stats",
+              "default": "24h",
+              "title": "Period"
+            },
+            "description": "P\u00e9riode pour les stats"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create Order",
+        "description": "Cr\u00e9e un nouvel ordre.",
+        "operationId": "create_order_api_v1_orders__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Orders",
+        "description": "R\u00e9cup\u00e8re la liste des ordres avec pagination et filtres.",
+        "operationId": "get_orders_api_v1_orders__get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Num\u00e9ro de page",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Num\u00e9ro de page"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Ordres par page",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Ordres par page"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par symbole",
+              "title": "Symbol"
+            },
+            "description": "Filtrer par symbole"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par statut",
+              "title": "Status"
+            },
+            "description": "Filtrer par statut"
+          },
+          {
+            "name": "side",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par c\u00f4t\u00e9",
+              "title": "Side"
+            },
+            "description": "Filtrer par c\u00f4t\u00e9"
+          },
+          {
+            "name": "order_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par type",
+              "title": "Order Type"
+            },
+            "description": "Filtrer par type"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Order",
+        "description": "R\u00e9cup\u00e8re un ordre sp\u00e9cifique.",
+        "operationId": "get_order_api_v1_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de l'ordre",
+              "title": "Order Id"
+            },
+            "description": "ID de l'ordre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Update Order",
+        "description": "Met \u00e0 jour un ordre existant.",
+        "operationId": "update_order_api_v1_orders__order_id__put",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de l'ordre",
+              "title": "Order Id"
+            },
+            "description": "ID de l'ordre"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cancel Order",
+        "description": "Annule un ordre.",
+        "operationId": "cancel_order_api_v1_orders__order_id__delete",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de l'ordre",
+              "title": "Order Id"
+            },
+            "description": "ID de l'ordre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/bulk": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create Bulk Orders",
+        "description": "Cr\u00e9e plusieurs ordres en une seule requ\u00eate.",
+        "operationId": "create_bulk_orders_api_v1_orders_bulk_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/active/count": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Active Orders Count",
+        "description": "R\u00e9cup\u00e8re le nombre d'ordres actifs.",
+        "operationId": "get_active_orders_count_api_v1_orders_active_count_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/cancel-all": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cancel All Orders",
+        "description": "Annule tous les ordres actifs.",
+        "operationId": "cancel_all_orders_api_v1_orders_cancel_all_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique (sinon tous)",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique (sinon tous)"
+          },
+          {
+            "name": "confirm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Confirmation required",
+              "default": false,
+              "title": "Confirm"
+            },
+            "description": "Confirmation required"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/history/{order_id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Order History",
+        "description": "R\u00e9cup\u00e8re l'historique des modifications d'un ordre.",
+        "operationId": "get_order_history_api_v1_orders_history__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de l'ordre",
+              "title": "Order Id"
+            },
+            "description": "ID de l'ordre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/fills/{order_id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Order Fills",
+        "description": "R\u00e9cup\u00e8re les ex\u00e9cutions partielles d'un ordre.",
+        "operationId": "get_order_fills_api_v1_orders_fills__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de l'ordre",
+              "title": "Order Id"
+            },
+            "description": "ID de l'ordre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/statistics": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get Order Statistics",
+        "description": "R\u00e9cup\u00e8re les statistiques des ordres.",
+        "operationId": "get_order_statistics_api_v1_orders_statistics_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Positions",
+        "description": "R\u00e9cup\u00e8re la liste des positions avec pagination et filtres.",
+        "operationId": "get_positions_api_v1_positions__get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Num\u00e9ro de page",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Num\u00e9ro de page"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Positions par page",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Positions par page"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par symbole",
+              "title": "Symbol"
+            },
+            "description": "Filtrer par symbole"
+          },
+          {
+            "name": "side",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par c\u00f4t\u00e9 (LONG/SHORT)",
+              "title": "Side"
+            },
+            "description": "Filtrer par c\u00f4t\u00e9 (LONG/SHORT)"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par statut",
+              "title": "Status"
+            },
+            "description": "Filtrer par statut"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{position_id}": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Position",
+        "description": "R\u00e9cup\u00e8re une position sp\u00e9cifique.",
+        "operationId": "get_position_api_v1_positions__position_id__get",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la position",
+              "title": "Position Id"
+            },
+            "description": "ID de la position"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Close Position",
+        "description": "Ferme une position.",
+        "operationId": "close_position_api_v1_positions__position_id__delete",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la position",
+              "title": "Position Id"
+            },
+            "description": "ID de la position"
+          },
+          {
+            "name": "close_price",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Prix de fermeture (market si non sp\u00e9cifi\u00e9)",
+              "title": "Close Price"
+            },
+            "description": "Prix de fermeture (market si non sp\u00e9cifi\u00e9)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{position_id}/stop-loss": {
+      "put": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Update Stop Loss",
+        "description": "Met \u00e0 jour le stop loss d'une position.",
+        "operationId": "update_stop_loss_api_v1_positions__position_id__stop_loss_put",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la position",
+              "title": "Position Id"
+            },
+            "description": "ID de la position"
+          },
+          {
+            "name": "stop_loss_price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Nouveau prix de stop loss",
+              "title": "Stop Loss Price"
+            },
+            "description": "Nouveau prix de stop loss"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{position_id}/take-profit": {
+      "put": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Update Take Profit",
+        "description": "Met \u00e0 jour le take profit d'une position.",
+        "operationId": "update_take_profit_api_v1_positions__position_id__take_profit_put",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la position",
+              "title": "Position Id"
+            },
+            "description": "ID de la position"
+          },
+          {
+            "name": "take_profit_price",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Nouveau prix de take profit",
+              "title": "Take Profit Price"
+            },
+            "description": "Nouveau prix de take profit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/close-all": {
+      "post": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Close All Positions",
+        "description": "Ferme toutes les positions.",
+        "operationId": "close_all_positions_api_v1_positions_close_all_post",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique (sinon toutes)",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique (sinon toutes)"
+          },
+          {
+            "name": "confirm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Confirmation required",
+              "default": false,
+              "title": "Confirm"
+            },
+            "description": "Confirmation required"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/portfolio/summary": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Portfolio Summary",
+        "description": "R\u00e9cup\u00e8re le r\u00e9sum\u00e9 du portefeuille.",
+        "operationId": "get_portfolio_summary_api_v1_positions_portfolio_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/portfolio/allocation": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Portfolio Allocation",
+        "description": "R\u00e9cup\u00e8re l'allocation du portefeuille par asset.",
+        "operationId": "get_portfolio_allocation_api_v1_positions_portfolio_allocation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/portfolio/performance": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Portfolio Performance",
+        "description": "R\u00e9cup\u00e8re les performances du portefeuille.",
+        "operationId": "get_portfolio_performance_api_v1_positions_portfolio_performance_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/analytics/pnl": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Pnl Analytics",
+        "description": "R\u00e9cup\u00e8re l'analyse PnL d\u00e9taill\u00e9e.",
+        "operationId": "get_pnl_analytics_api_v1_positions_analytics_pnl_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(1h|4h|24h|7d|30d)$",
+              "description": "P\u00e9riode d'analyse",
+              "default": "24h",
+              "title": "Period"
+            },
+            "description": "P\u00e9riode d'analyse"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/history/{position_id}": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Position History",
+        "description": "R\u00e9cup\u00e8re l'historique d'une position.",
+        "operationId": "get_position_history_api_v1_positions_history__position_id__get",
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la position",
+              "title": "Position Id"
+            },
+            "description": "ID de la position"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/exposure/net": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Net Exposure",
+        "description": "R\u00e9cup\u00e8re l'exposition nette.",
+        "operationId": "get_net_exposure_api_v1_positions_exposure_net_get",
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/statistics": {
+      "get": {
+        "tags": [
+          "Positions"
+        ],
+        "summary": "Get Position Statistics",
+        "description": "R\u00e9cup\u00e8re les statistiques des positions.",
+        "operationId": "get_position_statistics_api_v1_positions_statistics_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Symbole sp\u00e9cifique",
+              "title": "Symbol"
+            },
+            "description": "Symbole sp\u00e9cifique"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/metrics": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Risk Metrics",
+        "description": "R\u00e9cup\u00e8re les m\u00e9triques de risque actuelles.",
+        "operationId": "get_risk_metrics_api_v1_risk_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/var": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Var Calculation",
+        "description": "Calcule la VaR du portefeuille.",
+        "operationId": "get_var_calculation_api_v1_risk_var_get",
+        "parameters": [
+          {
+            "name": "confidence_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 0.99,
+              "minimum": 0.9,
+              "description": "Niveau de confiance",
+              "default": 0.95,
+              "title": "Confidence Level"
+            },
+            "description": "Niveau de confiance"
+          },
+          {
+            "name": "time_horizon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "description": "Horizon temporel en jours",
+              "default": 1,
+              "title": "Time Horizon"
+            },
+            "description": "Horizon temporel en jours"
+          },
+          {
+            "name": "method",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(monte_carlo|historical|parametric)$",
+              "description": "M\u00e9thode de calcul",
+              "default": "monte_carlo",
+              "title": "Method"
+            },
+            "description": "M\u00e9thode de calcul"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/stress-test": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Run Stress Test",
+        "description": "Ex\u00e9cute un stress test sur le portefeuille.",
+        "operationId": "run_stress_test_api_v1_risk_stress_test_get",
+        "parameters": [
+          {
+            "name": "scenario",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Sc\u00e9nario de stress test",
+              "title": "Scenario"
+            },
+            "description": "Sc\u00e9nario de stress test"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/limits": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Risk Limits",
+        "description": "R\u00e9cup\u00e8re les limites de risque configur\u00e9es.",
+        "operationId": "get_risk_limits_api_v1_risk_limits_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Update Risk Limits",
+        "description": "Met \u00e0 jour les limites de risque.",
+        "operationId": "update_risk_limits_api_v1_risk_limits_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskConfigRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/alerts": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Risk Alerts",
+        "description": "R\u00e9cup\u00e8re les alertes de risque.",
+        "operationId": "get_risk_alerts_api_v1_risk_alerts_get",
+        "parameters": [
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Seulement les alertes actives",
+              "default": true,
+              "title": "Active Only"
+            },
+            "description": "Seulement les alertes actives"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(LOW|MEDIUM|HIGH|CRITICAL)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Niveau de s\u00e9v\u00e9rit\u00e9",
+              "title": "Severity"
+            },
+            "description": "Niveau de s\u00e9v\u00e9rit\u00e9"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/alerts/{alert_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Acknowledge Alert",
+        "description": "Accuse r\u00e9ception d'une alerte de risque.",
+        "operationId": "acknowledge_alert_api_v1_risk_alerts__alert_id__acknowledge_post",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/exposure": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Risk Exposure",
+        "description": "R\u00e9cup\u00e8re l'exposition aux risques.",
+        "operationId": "get_risk_exposure_api_v1_risk_exposure_get",
+        "parameters": [
+          {
+            "name": "by_asset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Exposition par asset",
+              "default": true,
+              "title": "By Asset"
+            },
+            "description": "Exposition par asset"
+          },
+          {
+            "name": "by_sector",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Exposition par secteur",
+              "default": false,
+              "title": "By Sector"
+            },
+            "description": "Exposition par secteur"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/correlation": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Correlation Matrix",
+        "description": "R\u00e9cup\u00e8re la matrice de corr\u00e9lation des positions.",
+        "operationId": "get_correlation_matrix_api_v1_risk_correlation_get",
+        "parameters": [
+          {
+            "name": "lookback_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 7,
+              "description": "P\u00e9riode de lookback en jours",
+              "default": 30,
+              "title": "Lookback Days"
+            },
+            "description": "P\u00e9riode de lookback en jours"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/concentration": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Concentration Risk",
+        "description": "R\u00e9cup\u00e8re l'analyse du risque de concentration.",
+        "operationId": "get_concentration_risk_api_v1_risk_concentration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/liquidity": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Liquidity Risk",
+        "description": "R\u00e9cup\u00e8re l'analyse du risque de liquidit\u00e9.",
+        "operationId": "get_liquidity_risk_api_v1_risk_liquidity_get",
+        "parameters": [
+          {
+            "name": "time_horizon",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(1h|4h|1d|1w)$",
+              "description": "Horizon de liquidation",
+              "default": "1d",
+              "title": "Time Horizon"
+            },
+            "description": "Horizon de liquidation"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/emergency-stop": {
+      "post": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Emergency Stop",
+        "description": "D\u00e9clenche un arr\u00eat d'urgence du trading.",
+        "operationId": "emergency_stop_api_v1_risk_emergency_stop_post",
+        "parameters": [
+          {
+            "name": "reason",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Raison de l'arr\u00eat d'urgence",
+              "title": "Reason"
+            },
+            "description": "Raison de l'arr\u00eat d'urgence"
+          },
+          {
+            "name": "confirm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Confirmation required",
+              "default": false,
+              "title": "Confirm"
+            },
+            "description": "Confirmation required"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/backtesting/risk": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Get Backtesting Risk Metrics",
+        "description": "R\u00e9cup\u00e8re les m\u00e9triques de risque d'un backtest.",
+        "operationId": "get_backtesting_risk_metrics_api_v1_risk_backtesting_risk_get",
+        "parameters": [
+          {
+            "name": "backtest_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID du backtest",
+              "title": "Backtest Id"
+            },
+            "description": "ID du backtest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/risk/scenario-analysis": {
+      "get": {
+        "tags": [
+          "Risk Management"
+        ],
+        "summary": "Run Scenario Analysis",
+        "description": "Ex\u00e9cute une analyse de sc\u00e9narios multiples.",
+        "operationId": "run_scenario_analysis_api_v1_risk_scenario_analysis_get",
+        "parameters": [
+          {
+            "name": "scenarios",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Sc\u00e9narios s\u00e9par\u00e9s par des virgules",
+              "title": "Scenarios"
+            },
+            "description": "Sc\u00e9narios s\u00e9par\u00e9s par des virgules"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Strategies",
+        "description": "R\u00e9cup\u00e8re la liste des strat\u00e9gies avec pagination et filtres.",
+        "operationId": "get_strategies_api_v1_strategies__get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Num\u00e9ro de page",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Num\u00e9ro de page"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Strat\u00e9gies par page",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Strat\u00e9gies par page"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par type",
+              "title": "Type"
+            },
+            "description": "Filtrer par type"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par statut",
+              "title": "Status"
+            },
+            "description": "Filtrer par statut"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Create Strategy",
+        "description": "Cr\u00e9e une nouvelle strat\u00e9gie.",
+        "operationId": "create_strategy_api_v1_strategies__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStrategyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Strategy",
+        "description": "R\u00e9cup\u00e8re une strat\u00e9gie sp\u00e9cifique.",
+        "operationId": "get_strategy_api_v1_strategies__strategy_id__get",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Update Strategy",
+        "description": "Met \u00e0 jour une strat\u00e9gie existante.",
+        "operationId": "update_strategy_api_v1_strategies__strategy_id__put",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStrategyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Delete Strategy",
+        "description": "Supprime une strat\u00e9gie.",
+        "operationId": "delete_strategy_api_v1_strategies__strategy_id__delete",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Forcer la suppression m\u00eame si active",
+              "default": false,
+              "title": "Force"
+            },
+            "description": "Forcer la suppression m\u00eame si active"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/start": {
+      "post": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Start Strategy",
+        "description": "D\u00e9marre une strat\u00e9gie.",
+        "operationId": "start_strategy_api_v1_strategies__strategy_id__start_post",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/stop": {
+      "post": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Stop Strategy",
+        "description": "Arr\u00eate une strat\u00e9gie.",
+        "operationId": "stop_strategy_api_v1_strategies__strategy_id__stop_post",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/performance": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Strategy Performance",
+        "description": "R\u00e9cup\u00e8re les performances d'une strat\u00e9gie.",
+        "operationId": "get_strategy_performance_api_v1_strategies__strategy_id__performance_get",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de d\u00e9but",
+              "title": "Start Date"
+            },
+            "description": "Date de d\u00e9but"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Date de fin",
+              "title": "End Date"
+            },
+            "description": "Date de fin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/types": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Strategy Types",
+        "description": "R\u00e9cup\u00e8re les types de strat\u00e9gies support\u00e9s.",
+        "operationId": "get_strategy_types_api_v1_strategies_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/backtest": {
+      "post": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Create Backtest",
+        "description": "Lance un backtest pour une strat\u00e9gie.",
+        "operationId": "create_backtest_api_v1_strategies__strategy_id__backtest_post",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/backtests": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Strategy Backtests",
+        "description": "R\u00e9cup\u00e8re les backtests d'une strat\u00e9gie.",
+        "operationId": "get_strategy_backtests_api_v1_strategies__strategy_id__backtests_get",
+        "parameters": [
+          {
+            "name": "strategy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID de la strat\u00e9gie",
+              "title": "Strategy Id"
+            },
+            "description": "ID de la strat\u00e9gie"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Num\u00e9ro de page",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Num\u00e9ro de page"
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Backtests par page",
+              "default": 20,
+              "title": "Per Page"
+            },
+            "description": "Backtests par page"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrer par statut",
+              "title": "Status"
+            },
+            "description": "Filtrer par statut"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/backtests/{backtest_id}": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Backtest",
+        "description": "R\u00e9cup\u00e8re un backtest sp\u00e9cifique.",
+        "operationId": "get_backtest_api_v1_strategies_backtests__backtest_id__get",
+        "parameters": [
+          {
+            "name": "backtest_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID du backtest",
+              "title": "Backtest Id"
+            },
+            "description": "ID du backtest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Cancel Backtest",
+        "description": "Annule un backtest en cours.",
+        "operationId": "cancel_backtest_api_v1_strategies_backtests__backtest_id__delete",
+        "parameters": [
+          {
+            "name": "backtest_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID du backtest",
+              "title": "Backtest Id"
+            },
+            "description": "ID du backtest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/strategies/backtests/{backtest_id}/results": {
+      "get": {
+        "tags": [
+          "Strategies"
+        ],
+        "summary": "Get Backtest Results",
+        "description": "R\u00e9cup\u00e8re les r\u00e9sultats d\u00e9taill\u00e9s d'un backtest.",
+        "operationId": "get_backtest_results_api_v1_strategies_backtests__backtest_id__results_get",
+        "parameters": [
+          {
+            "name": "backtest_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID du backtest",
+              "title": "Backtest Id"
+            },
+            "description": "ID du backtest"
+          },
+          {
+            "name": "include_trades",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Inclure les d\u00e9tails des trades",
+              "default": false,
+              "title": "Include Trades"
+            },
+            "description": "Inclure les d\u00e9tails des trades"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Point d'entr\u00e9e principal de l'API.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Endpoint de v\u00e9rification de sant\u00e9.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "summary": "Api Status",
+        "description": "Statut d\u00e9taill\u00e9 de l'API.",
+        "operationId": "api_status_api_v1_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "summary": "Get Config",
+        "description": "Configuration publique de l'API.",
+        "operationId": "get_config_api_v1_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "title": "ApiResponse",
+        "description": "R\u00e9ponse API g\u00e9n\u00e9rique."
+      },
+      "BacktestRequest": {
+        "properties": {
+          "strategy_id": {
+            "type": "string",
+            "title": "Strategy Id",
+            "description": "ID de la strat\u00e9gie"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "Date de d\u00e9but du backtest"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End Date",
+            "description": "Date de fin du backtest"
+          },
+          "initial_capital": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Initial Capital",
+            "description": "Capital initial"
+          },
+          "symbols": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbols",
+            "description": "Symboles sp\u00e9cifiques"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters",
+            "description": "Param\u00e8tres personnalis\u00e9s"
+          }
+        },
+        "type": "object",
+        "required": [
+          "strategy_id",
+          "start_date",
+          "end_date",
+          "initial_capital"
+        ],
+        "title": "BacktestRequest",
+        "description": "Requ\u00eate de backtest."
+      },
+      "BulkOrderRequest": {
+        "properties": {
+          "orders": {
+            "items": {
+              "$ref": "#/components/schemas/CreateOrderRequest"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Orders",
+            "description": "Liste d'ordres"
+          },
+          "fail_on_error": {
+            "type": "boolean",
+            "title": "Fail On Error",
+            "description": "Arr\u00eater si une erreur survient",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "orders"
+        ],
+        "title": "BulkOrderRequest",
+        "description": "Requ\u00eate d'ordres en lot."
+      },
+      "CreateOrderRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbole de trading (ex: BTC/USDT)"
+          },
+          "side": {
+            "$ref": "#/components/schemas/OrderSideEnum",
+            "description": "C\u00f4t\u00e9 de l'ordre"
+          },
+          "type": {
+            "$ref": "#/components/schemas/OrderTypeEnum",
+            "description": "Type d'ordre"
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity",
+            "description": "Quantit\u00e9 \u00e0 trader"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price",
+            "description": "Prix limite (requis pour LIMIT)"
+          },
+          "stop_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Price",
+            "description": "Prix stop"
+          },
+          "time_in_force": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time In Force",
+            "description": "Dur\u00e9e de validit\u00e9",
+            "default": "GTC"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss",
+            "description": "Prix de stop loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit",
+            "description": "Prix de take profit"
+          },
+          "client_order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Order Id",
+            "description": "ID client personnalis\u00e9"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Notes sur l'ordre"
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbol",
+          "side",
+          "type",
+          "quantity"
+        ],
+        "title": "CreateOrderRequest",
+        "description": "Requ\u00eate de cr\u00e9ation d'ordre."
+      },
+      "CreateStrategyRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Nom de la strat\u00e9gie"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Type de strat\u00e9gie"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters",
+            "description": "Param\u00e8tres de la strat\u00e9gie"
+          },
+          "symbols": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Symbols",
+            "description": "Symboles \u00e0 trader"
+          },
+          "risk_parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Parameters",
+            "description": "Param\u00e8tres de risque"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "description": "Strat\u00e9gie active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "parameters",
+          "symbols"
+        ],
+        "title": "CreateStrategyRequest",
+        "description": "Requ\u00eate de cr\u00e9ation de strat\u00e9gie."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/StatusEnum"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "services": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Services"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "uptime": {
+            "type": "string",
+            "title": "Uptime"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "timestamp",
+          "version",
+          "uptime"
+        ],
+        "title": "HealthResponse",
+        "description": "R\u00e9ponse de v\u00e9rification de sant\u00e9."
+      },
+      "MarketDataRequest": {
+        "properties": {
+          "symbols": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Symbols",
+            "description": "Symboles demand\u00e9s"
+          },
+          "timeframe": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeframeEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Timeframe pour historique"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Date de d\u00e9but"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Date de fin"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "Nombre maximum de points",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "symbols"
+        ],
+        "title": "MarketDataRequest",
+        "description": "Requ\u00eate de donn\u00e9es de march\u00e9."
+      },
+      "OrderSideEnum": {
+        "type": "string",
+        "enum": [
+          "BUY",
+          "SELL"
+        ],
+        "title": "OrderSideEnum",
+        "description": "C\u00f4t\u00e9s d'ordre."
+      },
+      "OrderTypeEnum": {
+        "type": "string",
+        "enum": [
+          "MARKET",
+          "LIMIT",
+          "STOP",
+          "STOP_LIMIT",
+          "TRAILING_STOP"
+        ],
+        "title": "OrderTypeEnum",
+        "description": "Types d'ordre."
+      },
+      "PaginatedResponse": {
+        "properties": {
+          "data": {
+            "items": {},
+            "type": "array",
+            "title": "Data"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Per Page"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages"
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next"
+          },
+          "has_prev": {
+            "type": "boolean",
+            "title": "Has Prev"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "total",
+          "page",
+          "per_page",
+          "pages",
+          "has_next",
+          "has_prev"
+        ],
+        "title": "PaginatedResponse",
+        "description": "R\u00e9ponse pagin\u00e9e."
+      },
+      "RiskConfigRequest": {
+        "properties": {
+          "max_portfolio_var": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Portfolio Var",
+            "description": "VaR maximum du portefeuille"
+          },
+          "max_position_size": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Position Size",
+            "description": "Taille maximum d'une position"
+          },
+          "max_leverage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Leverage",
+            "description": "Leverage maximum"
+          },
+          "max_correlation": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Correlation",
+            "description": "Corr\u00e9lation maximum"
+          },
+          "max_drawdown": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown",
+            "description": "Drawdown maximum"
+          },
+          "position_limit_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Limit Pct",
+            "description": "% maximum du portefeuille par position"
+          },
+          "daily_loss_limit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Loss Limit",
+            "description": "Perte journali\u00e8re maximum"
+          }
+        },
+        "type": "object",
+        "title": "RiskConfigRequest",
+        "description": "Requ\u00eate de configuration des risques."
+      },
+      "StatusEnum": {
+        "type": "string",
+        "enum": [
+          "healthy",
+          "degraded",
+          "unhealthy"
+        ],
+        "title": "StatusEnum",
+        "description": "Statuts de sant\u00e9 de l'API."
+      },
+      "TimeframeEnum": {
+        "type": "string",
+        "enum": [
+          "1m",
+          "5m",
+          "15m",
+          "30m",
+          "1h",
+          "4h",
+          "1d",
+          "1w"
+        ],
+        "title": "TimeframeEnum",
+        "description": "Timeframes pour les donn\u00e9es de march\u00e9."
+      },
+      "UpdateOrderRequest": {
+        "properties": {
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity",
+            "description": "Nouvelle quantit\u00e9"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price",
+            "description": "Nouveau prix"
+          },
+          "stop_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Price",
+            "description": "Nouveau prix stop"
+          },
+          "stop_loss": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss",
+            "description": "Nouveau stop loss"
+          },
+          "take_profit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Profit",
+            "description": "Nouveau take profit"
+          }
+        },
+        "type": "object",
+        "title": "UpdateOrderRequest",
+        "description": "Requ\u00eate de modification d'ordre."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

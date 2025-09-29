@@ -143,11 +143,10 @@ class StructuredLogger:
 
     def _log(self, level: LogLevel, message: str, **kwargs):
         """Méthode interne de logging"""
-        # Enrichir avec le contexte
-        log_data = {
+        # Enrichir avec le contexte (sans 'message' pour éviter conflit LogRecord)
+        extra_data = {
             'timestamp': datetime.utcnow().isoformat(),
             'level': level.value,
-            'message': message,
             'logger': self.name,
             **self.context.to_dict(),
             **self._get_correlation_context(),
@@ -158,7 +157,7 @@ class StructuredLogger:
         frame = inspect.currentframe()
         if frame and frame.f_back and frame.f_back.f_back:
             caller_frame = frame.f_back.f_back
-            log_data['source'] = {
+            extra_data['source'] = {
                 'file': caller_frame.f_code.co_filename.split('/')[-1],
                 'function': caller_frame.f_code.co_name,
                 'line': caller_frame.f_lineno
@@ -176,7 +175,12 @@ class StructuredLogger:
             LogLevel.AUDIT: logging.INFO
         }
 
-        self.logger.log(level_map[level], json.dumps(log_data) if self.output_format == "json" else message, extra=log_data)
+        # Pour JSON, inclure le message dans la structure
+        if self.output_format == "json":
+            log_data = {'message': message, **extra_data}
+            self.logger.log(level_map[level], json.dumps(log_data), extra=extra_data)
+        else:
+            self.logger.log(level_map[level], message, extra=extra_data)
 
     def _get_correlation_context(self) -> Dict[str, Any]:
         """Récupérer le contexte de correlation depuis ContextVars"""

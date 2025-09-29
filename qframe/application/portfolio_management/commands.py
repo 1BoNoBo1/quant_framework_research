@@ -31,6 +31,9 @@ class CreatePortfolioCommand(Command):
     benchmark_symbol: str = "SPY"
     currency: str = "USD"
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class UpdatePortfolioCommand(Command):
@@ -42,6 +45,9 @@ class UpdatePortfolioCommand(Command):
     constraints: Optional[PortfolioConstraints] = None
     benchmark_symbol: Optional[str] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class AddPositionCommand(Command):
@@ -49,12 +55,18 @@ class AddPositionCommand(Command):
     portfolio_id: str
     position: Position
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class RemovePositionCommand(Command):
     """Commande pour retirer une position du portfolio"""
     portfolio_id: str
     symbol: str
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -65,6 +77,9 @@ class UpdatePositionCommand(Command):
     new_quantity: Optional[Decimal] = None
     new_price: Optional[Decimal] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class AdjustCashCommand(Command):
@@ -73,12 +88,18 @@ class AdjustCashCommand(Command):
     amount: Decimal
     reason: str = "Manual adjustment"
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class SetTargetAllocationCommand(Command):
     """Commande pour définir les allocations cibles"""
     portfolio_id: str
     target_allocations: Dict[str, Decimal]
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -89,6 +110,9 @@ class RebalancePortfolioCommand(Command):
     rebalancing_threshold: Decimal = Decimal("0.05")
     force_rebalance: bool = False
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class OptimizeAllocationCommand(Command):
@@ -97,12 +121,18 @@ class OptimizeAllocationCommand(Command):
     optimization_method: str = "equal_weight"  # equal_weight, risk_parity, momentum
     parameters: Dict[str, Any] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class AddStrategyToPortfolioCommand(Command):
     """Commande pour ajouter une stratégie au portfolio"""
     portfolio_id: str
     strategy_id: str
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -111,17 +141,26 @@ class RemoveStrategyFromPortfolioCommand(Command):
     portfolio_id: str
     strategy_id: str
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class CreateSnapshotCommand(Command):
     """Commande pour créer un snapshot du portfolio"""
     portfolio_id: str
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class ArchivePortfolioCommand(Command):
     """Commande pour archiver un portfolio"""
     portfolio_id: str
+
+    def __post_init__(self):
+        super().__init__()
 
 
 class CreatePortfolioHandler(CommandHandler[CreatePortfolioCommand]):

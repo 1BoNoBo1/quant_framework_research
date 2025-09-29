@@ -9,6 +9,7 @@ Orchestre les use cases de création, modification et suppression des stratégie
 from typing import Dict, Any, List
 from datetime import datetime
 import logging
+import uuid
 
 from ...domain.entities.strategy import Strategy, StrategyStatus, StrategyType
 from ...domain.repositories.strategy_repository import StrategyRepository, RepositoryError
@@ -63,6 +64,7 @@ class StrategyCommandHandler:
 
         # Créer l'entité stratégie
         strategy = Strategy(
+            id=str(uuid.uuid4()),  # Générer un ID unique
             name=command.name,
             description=command.description,
             strategy_type=command.strategy_type,
@@ -100,6 +102,10 @@ class StrategyCommandHandler:
         if not strategy:
             raise ValueError(f"Strategy {command.strategy_id} not found")
 
+        # Valeurs originales et nouvelles pour validation
+        logger.debug(f"Original risk_per_trade: {strategy.risk_per_trade}")
+        logger.debug(f"New risk_per_trade: {command.risk_per_trade}")
+
         # Vérifier que la stratégie peut être modifiée
         if strategy.status == StrategyStatus.ACTIVE:
             logger.warning("⚠️ Modification d'une stratégie active")
@@ -110,7 +116,7 @@ class StrategyCommandHandler:
             name=command.name or strategy.name,
             description=command.description or strategy.description,
             strategy_type=strategy.strategy_type,  # Type ne peut pas changer
-            version=strategy.version,
+            version=strategy.version + 1,  # Incrémenter la version
             author=strategy.author,
             created_at=strategy.created_at,
             updated_at=datetime.utcnow(),
@@ -127,6 +133,9 @@ class StrategyCommandHandler:
             positions=strategy.positions,
             signal_history=strategy.signal_history
         )
+
+        # Validation de la valeur après création
+        logger.debug(f"After creation risk_per_trade: {updated_strategy.risk_per_trade}")
 
         # Valider les nouvelles données
         await self._validate_strategy_business_rules(updated_strategy)

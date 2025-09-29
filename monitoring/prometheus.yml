@@ -1,0 +1,186 @@
+# 📊 Prometheus Configuration for QFrame Production
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'qframe-production'
+    environment: 'production'
+
+# 📋 Rule files for alerting
+rule_files:
+  - "qframe_alerts.yml"
+  - "infrastructure_alerts.yml"
+
+# 🎯 Scrape configurations
+scrape_configs:
+  # QFrame API Metrics
+  - job_name: 'qframe-api'
+    static_configs:
+      - targets: ['qframe-api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # QFrame UI Metrics (if available)
+  - job_name: 'qframe-ui'
+    static_configs:
+      - targets: ['qframe-ui:8501']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # PostgreSQL Metrics (avec postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'qframe-postgres'
+
+  # Redis Metrics (avec redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'qframe-redis'
+
+  # Kubernetes Cluster Metrics
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+  # Kubernetes Pods
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: ['qframe', 'qframe-staging']
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+  # QFrame Custom Business Metrics
+  - job_name: 'qframe-business-metrics'
+    static_configs:
+      - targets: ['qframe-api:8000']
+    metrics_path: '/api/v1/metrics/business'
+    scrape_interval: 60s
+    scrape_timeout: 30s
+    params:
+      format: ['prometheus']
+
+  # Node Exporter for system metrics
+  - job_name: 'node-exporter'
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: ['monitoring']
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        action: keep
+        regex: node-exporter
+
+# 🚨 Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      path_prefix: /alertmanager
+      scheme: http
+
+# 📈 Recording rules pour optimiser les requêtes
+recording_rules:
+  - name: qframe_recording_rules
+    interval: 30s
+    rules:
+      # Trading Performance
+      - record: qframe:trade_success_rate_5m
+        expr: |
+          (
+            rate(qframe_trades_total{status="success"}[5m]) /
+            rate(qframe_trades_total[5m])
+          ) * 100
+
+      - record: qframe:avg_trade_latency_5m
+        expr: |
+          rate(qframe_trade_duration_seconds_sum[5m]) /
+          rate(qframe_trade_duration_seconds_count[5m])
+
+      # Portfolio Metrics
+      - record: qframe:total_portfolio_value
+        expr: |
+          sum(qframe_portfolio_balance_usd) by (portfolio_id)
+
+      - record: qframe:portfolio_pnl_5m
+        expr: |
+          rate(qframe_portfolio_pnl_total[5m])
+
+      # API Performance
+      - record: qframe:api_error_rate_5m
+        expr: |
+          (
+            rate(qframe_http_requests_total{status=~"4..|5.."}[5m]) /
+            rate(qframe_http_requests_total[5m])
+          ) * 100
+
+      - record: qframe:api_response_time_p95_5m
+        expr: |
+          histogram_quantile(0.95,
+            rate(qframe_http_request_duration_seconds_bucket[5m]))
+
+# 🔧 Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 30d
+    retention.size: 50GB
+    wal-compression: true
+
+# 🌐 Web configuration
+web:
+  console.libraries: /etc/prometheus/console_libraries
+  console.templates: /etc/prometheus/consoles
+  enable-lifecycle: true
+  enable-admin-api: true
+
+# 🔍 Tracing configuration (if using Jaeger)
+tracing:
+  endpoint: http://jaeger-collector:14268/api/traces
+  insecure: true
+  timeout: 30s

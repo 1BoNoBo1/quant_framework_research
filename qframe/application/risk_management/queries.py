@@ -9,7 +9,7 @@ Implémente le pattern CQRS pour la séparation des responsabilités.
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from decimal import Decimal
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..base.query import Query, QueryHandler, QueryResult
 from ...domain.entities.risk_assessment import RiskAssessment, RiskLevel, RiskType

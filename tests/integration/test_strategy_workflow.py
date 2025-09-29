@@ -13,13 +13,14 @@ from qframe.application.commands.strategy_commands import (
     UpdateStrategyCommand,
     ActivateStrategyCommand
 )
+from qframe.domain.entities.strategy import StrategyType
 from qframe.application.handlers.strategy_command_handler import StrategyCommandHandler
 from qframe.application.queries.strategy_queries import GetStrategyByIdQuery
 from qframe.application.handlers.strategy_query_handler import StrategyQueryHandler
 
 from qframe.infrastructure.persistence.memory_strategy_repository import MemoryStrategyRepository
 from qframe.infrastructure.config.service_configuration import ServiceConfiguration
-from qframe.infrastructure.config.environment_config import ApplicationConfig, Environment
+from qframe.core.config import FrameworkConfig, Environment
 
 
 @pytest.mark.asyncio
@@ -29,11 +30,12 @@ class TestStrategyWorkflow:
     @pytest.fixture
     async def setup(self):
         """Setup test environment"""
-        config = ApplicationConfig(environment=Environment.TESTING)
-        service_config = ServiceConfiguration(config)
-        service_config.configure()
-        
-        container = service_config.container
+        from qframe.core.container import DIContainer
+
+        config = FrameworkConfig(environment=Environment.TESTING)
+        container = DIContainer()
+        service_config = ServiceConfiguration(container, config)
+        service_config.configure_all_services()
         
         # Get handlers
         command_handler = container.resolve(StrategyCommandHandler)
@@ -49,30 +51,30 @@ class TestStrategyWorkflow:
         create_command = CreateStrategyCommand(
             name="Test MA Strategy",
             description="Moving average test strategy",
-            parameters={
-                "fast_period": 10,
-                "slow_period": 20,
-                "symbol": "BTC/USDT"
-            }
+            strategy_type=StrategyType.MEAN_REVERSION,
+            universe=["BTC/USDT"],
+            max_position_size=Decimal("0.1"),
+            max_positions=5,
+            risk_per_trade=Decimal("0.02")
         )
         
-        strategy = await command_handler.handle(create_command)
-        assert strategy.name == "Test MA Strategy"
-        assert strategy.status.value == "inactive"
-        
+        strategy_id = await command_handler.handle_create_strategy(create_command)
+        assert strategy_id is not None
+
         # Query the created strategy
-        query = GetStrategyByIdQuery(strategy_id=strategy.id)
-        retrieved = await query_handler.handle(query)
-        assert retrieved.id == strategy.id
-        
+        query = GetStrategyByIdQuery(strategy_id=strategy_id)
+        retrieved = await query_handler.handle_get_by_id(query)
+        assert retrieved.id == strategy_id
+        assert retrieved.name == "Test MA Strategy"
+        assert retrieved.status.value == "inactive"
+
         # Activate the strategy
-        activate_command = ActivateStrategyCommand(strategy_id=strategy.id)
-        activated = await command_handler.handle(activate_command)
-        assert activated.status.value == "active"
-        
+        activate_command = ActivateStrategyCommand(strategy_id=strategy_id)
+        await command_handler.handle_activate_strategy(activate_command)
+
         # Verify it's active
-        query = GetStrategyByIdQuery(strategy_id=strategy.id)
-        retrieved = await query_handler.handle(query)
+        query = GetStrategyByIdQuery(strategy_id=strategy_id)
+        retrieved = await query_handler.handle_get_by_id(query)
         assert retrieved.status.value == "active"
     
     async def test_update_strategy_parameters(self, setup):
@@ -83,21 +85,36 @@ class TestStrategyWorkflow:
         create_command = CreateStrategyCommand(
             name="Update Test Strategy",
             description="Strategy for update testing",
-            parameters={"param1": 100}
+            strategy_type=StrategyType.MEAN_REVERSION,
+            universe=["BTC/USDT"],
+            max_position_size=Decimal("0.1"),
+            max_positions=3,
+            risk_per_trade=Decimal("0.02")
         )
         
-        strategy = await command_handler.handle(create_command)
-        original_version = strategy.version
-        
+        strategy_id = await command_handler.handle_create_strategy(create_command)
+
+        # Get original strategy to check version
+        query = GetStrategyByIdQuery(strategy_id=strategy_id)
+        original_strategy = await query_handler.handle_get_by_id(query)
+        original_version = original_strategy.version
+
         # Update parameters
         update_command = UpdateStrategyCommand(
-            strategy_id=strategy.id,
-            parameters={"param1": 200, "param2": 50}
+            strategy_id=strategy_id,
+            max_position_size=Decimal("0.15"),
+            max_positions=5,
+            risk_per_trade=Decimal("0.03")
         )
-        
-        updated = await command_handler.handle(update_command)
-        assert updated.parameters["param1"] == 200
-        assert updated.parameters["param2"] == 50
+
+        await command_handler.handle_update_strategy(update_command)
+
+        # Query updated strategy
+        query = GetStrategyByIdQuery(strategy_id=strategy_id)
+        updated = await query_handler.handle_get_by_id(query)
+        assert updated.max_position_size == Decimal("0.15")
+        assert updated.max_positions == 5
+        assert updated.risk_per_trade == Decimal("0.03")
         assert updated.version > original_version
     
     async def test_concurrent_strategy_operations(self, setup):
@@ -110,44 +127,57 @@ class TestStrategyWorkflow:
             command = CreateStrategyCommand(
                 name=f"Concurrent Strategy {i}",
                 description=f"Test strategy {i}",
-                parameters={"index": i}
+                strategy_type=StrategyType.MOMENTUM,
+                universe=[f"ETH/USDT"],
+                max_position_size=Decimal("0.05"),
+                max_positions=2,
+                risk_per_trade=Decimal("0.01")
             )
-            create_tasks.append(command_handler.handle(command))
-        
-        strategies = await asyncio.gather(*create_tasks)
-        assert len(strategies) == 5
-        
+            create_tasks.append(command_handler.handle_create_strategy(command))
+
+        strategy_ids = await asyncio.gather(*create_tasks)
+        assert len(strategy_ids) == 5
+
         # Activate all strategies concurrently
         activate_tasks = []
-        for strategy in strategies:
-            command = ActivateStrategyCommand(strategy_id=strategy.id)
-            activate_tasks.append(command_handler.handle(command))
-        
-        activated = await asyncio.gather(*activate_tasks)
-        assert all(s.status.value == "active" for s in activated)
+        for strategy_id in strategy_ids:
+            command = ActivateStrategyCommand(strategy_id=strategy_id)
+            activate_tasks.append(command_handler.handle_activate_strategy(command))
+
+        await asyncio.gather(*activate_tasks)
+
+        # Verify all are active
+        for strategy_id in strategy_ids:
+            query = GetStrategyByIdQuery(strategy_id=strategy_id)
+            strategy = await query_handler.handle_get_by_id(query)
+            assert strategy.status.value == "active"
     
     async def test_strategy_error_handling(self, setup):
         """Test error handling in strategy operations"""
         command_handler, query_handler = setup
         
         # Try to activate non-existent strategy
-        fake_id = uuid4()
+        fake_id = str(uuid4())
         activate_command = ActivateStrategyCommand(strategy_id=fake_id)
-        
+
         with pytest.raises(Exception) as exc_info:
-            await command_handler.handle(activate_command)
+            await command_handler.handle_activate_strategy(activate_command)
         assert "not found" in str(exc_info.value).lower()
-        
+
         # Try to create strategy with duplicate name
         create_command = CreateStrategyCommand(
             name="Duplicate Strategy",
             description="First strategy",
-            parameters={}
+            strategy_type=StrategyType.ARBITRAGE,
+            universe=["ADA/USDT", "DOT/USDT"],  # Arbitrage requires at least 2 symbols
+            max_position_size=Decimal("0.08"),
+            max_positions=4,
+            risk_per_trade=Decimal("0.015")
         )
-        
-        await command_handler.handle(create_command)
-        
+
+        await command_handler.handle_create_strategy(create_command)
+
         # Try to create another with same name
         with pytest.raises(Exception) as exc_info:
-            await command_handler.handle(create_command)
+            await command_handler.handle_create_strategy(create_command)
         assert "already exists" in str(exc_info.value).lower()

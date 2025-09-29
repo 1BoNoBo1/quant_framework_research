@@ -631,6 +631,14 @@ class MarketDataPipeline:
 
         self.logger.info(f"Registered data provider: {provider.name}")
 
+    def get_registered_providers(self) -> List[str]:
+        """Retourner la liste des noms des providers enregistrés"""
+        return list(self._providers.keys())
+
+    def get_provider(self, name: str) -> Optional[DataProvider]:
+        """Récupérer un provider par son nom"""
+        return self._providers.get(name)
+
     async def start(self):
         """Démarrer le pipeline"""
         self._running = True

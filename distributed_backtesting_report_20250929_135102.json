@@ -1,0 +1,80 @@
+{
+  "timestamp": "2025-09-29T13:51:02.672331",
+  "global_score": 77.77777777777777,
+  "status": "\u2705 GOOD - Performance acceptable",
+  "fastest_backend": "sequential",
+  "available_backends": 1,
+  "total_backends": 3,
+  "total_signals": 3899,
+  "multi_strategy_success_rate": 100.0,
+  "component_scores": {
+    "backend_availability": 33.33333333333333,
+    "signal_generation": 100,
+    "multi_strategy": 100.0
+  },
+  "detailed_results": {
+    "backend_performance": {
+      "sequential": {
+        "status": "success",
+        "execution_time": 9.191362380981445,
+        "signals_generated": 3899,
+        "throughput": 424.20261963207116,
+        "details": {
+          "backend": "sequential",
+          "strategies_tested": 3,
+          "datasets_tested": 3,
+          "total_signals": 3899,
+          "strategy_results": {
+            "mean_reversion": {
+              "signals": 2983,
+              "datasets_processed": 3
+            },
+            "momentum": {
+              "signals": 370,
+              "datasets_processed": 3
+            },
+            "volatility_breakout": {
+              "signals": 546,
+              "datasets_processed": 3
+            }
+          }
+        }
+      }
+    },
+    "multi_strategy_results": {
+      "total_combinations": 9,
+      "successful_combinations": 9,
+      "strategy_performance": {
+        "mean_reversion": {
+          "total_signals": 2983,
+          "symbols_tested": 3,
+          "avg_signals_per_symbol": 994.3333333333334
+        },
+        "momentum": {
+          "total_signals": 370,
+          "symbols_tested": 3,
+          "avg_signals_per_symbol": 123.33333333333333
+        },
+        "volatility_breakout": {
+          "total_signals": 546,
+          "symbols_tested": 3,
+          "avg_signals_per_symbol": 182.0
+        }
+      },
+      "best_combination": {
+        "strategy": "mean_reversion",
+        "symbol": "BTC/USDT",
+        "signals": 1024,
+        "data_points": 2833,
+        "signal_rate": 0.36145428873985175
+      }
+    }
+  },
+  "recommendations": [
+    "\u2705 Performance acceptable, monitoring recommand\u00e9",
+    "\ud83d\udd27 Optimiser configuration backends",
+    "\ud83d\udcc8 Augmenter datasets de test",
+    "\ud83d\udce6 Installer tous les backends (pip install dask ray)",
+    "\u26a1 Installer Dask pour am\u00e9liorer performance"
+  ]
+}

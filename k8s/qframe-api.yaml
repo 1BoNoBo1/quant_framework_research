@@ -1,0 +1,180 @@
+# 🚀 QFrame API Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qframe-api
+  namespace: qframe
+  labels:
+    app: qframe-api
+    component: backend
+spec:
+  replicas: 2  # Haute disponibilité
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: qframe-api
+  template:
+    metadata:
+      labels:
+        app: qframe-api
+        component: backend
+    spec:
+      containers:
+      - name: qframe-api
+        image: qframe/api:latest  # À construire et pousser vers registry
+        ports:
+        - containerPort: 8000
+        env:
+        - name: QFRAME_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: QFRAME_ENVIRONMENT
+        - name: QFRAME_LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: QFRAME_LOG_LEVEL
+        - name: QFRAME_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: qframe-secrets
+              key: QFRAME_SECRET_KEY
+        - name: QFRAME_DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@qframe-postgres:5432/$(POSTGRES_DB)"
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qframe-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: POSTGRES_DB
+        - name: QFRAME_REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: REDIS_URL
+        - name: QFRAME_CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: qframe-config
+              key: QFRAME_CORS_ORIGINS
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: data-volume
+          mountPath: /app/data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: qframe-logs-pvc
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: qframe-data-pvc
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h qframe-postgres -p 5432 -U qframe; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qframe-secrets
+              key: POSTGRES_PASSWORD
+      - name: wait-for-redis
+        image: redis:7-alpine
+        command:
+        - sh
+        - -c
+        - |
+          until redis-cli -h qframe-redis ping; do
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+---
+# Service pour QFrame API
+apiVersion: v1
+kind: Service
+metadata:
+  name: qframe-api
+  namespace: qframe
+  labels:
+    app: qframe-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: qframe-api
+---
+# HPA (Horizontal Pod Autoscaler)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qframe-api-hpa
+  namespace: qframe
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qframe-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

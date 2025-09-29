@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 import uuid
 
-from ..value_objects.position import Position
+from ..entities.position import Position
 
 
 class OrderType(str, Enum):

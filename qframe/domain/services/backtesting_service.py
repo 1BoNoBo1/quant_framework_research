@@ -135,7 +135,6 @@ class BacktestingService:
         # Créer le portfolio initial
         portfolio = Portfolio(
             name=f"Backtest_{result.id}",
-            cash_balance=config.initial_capital,
             initial_capital=config.initial_capital
         )
 
@@ -272,7 +271,7 @@ class BacktestingService:
             Tuple (portfolio_values, trades)
         """
         portfolio = initial_portfolio
-        portfolio_values = [float(portfolio.total_value)]
+        portfolio_values = []
         trades = []
 
         # Simuler jour par jour

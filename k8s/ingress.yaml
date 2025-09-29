@@ -1,0 +1,107 @@
+# 🌐 Ingress Configuration for QFrame
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qframe-ingress
+  namespace: qframe
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Si cert-manager est installé
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - qframe.your-domain.com
+    - api.qframe.your-domain.com
+    - grafana.qframe.your-domain.com
+    secretName: qframe-tls-secret
+  rules:
+  # Frontend UI
+  - host: qframe.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qframe-ui
+            port:
+              number: 8501
+  # Backend API
+  - host: api.qframe.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qframe-api
+            port:
+              number: 8000
+  # Monitoring Dashboard
+  - host: grafana.qframe.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qframe-grafana
+            port:
+              number: 3000
+---
+# 🔒 TLS Certificate (manual - adapter selon votre setup)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: qframe-tls-secret
+  namespace: qframe
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t  # Remplacer par votre certificat
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0t  # Remplacer par votre clé privée
+---
+# 🚦 Network Policy pour Ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qframe-ingress-policy
+  namespace: qframe
+spec:
+  podSelector:
+    matchLabels:
+      component: frontend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx  # Adapter selon votre ingress controller
+    ports:
+    - protocol: TCP
+      port: 8501
+---
+# API Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qframe-api-ingress-policy
+  namespace: qframe
+spec:
+  podSelector:
+    matchLabels:
+      component: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000

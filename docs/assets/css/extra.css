@@ -1,0 +1,294 @@
+/* =============================================================================
+   QFrame Documentation - Styles Personnalisés
+   ============================================================================= */
+
+:root {
+  /* Variables pour thème QFrame */
+  --qframe-primary: #7c4dff;
+  --qframe-secondary: #9c27b0;
+  --qframe-success: #4caf50;
+  --qframe-warning: #ff9800;
+  --qframe-error: #f44336;
+  --qframe-info: #2196f3;
+
+  /* Gradients */
+  --qframe-gradient: linear-gradient(135deg, var(--qframe-primary), var(--qframe-secondary));
+  --qframe-gradient-light: linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(156, 39, 176, 0.1));
+
+  /* Shadows */
+  --qframe-shadow: 0 4px 20px rgba(124, 77, 255, 0.2);
+  --qframe-shadow-lg: 0 8px 40px rgba(124, 77, 255, 0.3);
+}
+
+/* =============================================================================
+   Améliorations du thème Material
+   ============================================================================= */
+
+/* Header avec gradient */
+.md-header {
+  background: var(--qframe-gradient) !important;
+  box-shadow: var(--qframe-shadow) !important;
+}
+
+/* Navigation principale */
+.md-tabs__link {
+  transition: all 0.3s ease;
+}
+
+.md-tabs__link:hover {
+  transform: translateY(-2px);
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Sidebar améliorée */
+.md-nav__item--active > .md-nav__link {
+  background: var(--qframe-gradient-light);
+  border-left: 3px solid var(--qframe-primary);
+  font-weight: 600;
+}
+
+/* =============================================================================
+   Code et syntaxe highlighting
+   ============================================================================= */
+
+/* Blocs de code avec style QFrame */
+.highlight pre {
+  border-left: 4px solid var(--qframe-primary);
+  background: linear-gradient(135deg, rgba(124, 77, 255, 0.05), rgba(156, 39, 176, 0.05));
+}
+
+/* Code inline */
+code {
+  background: var(--qframe-gradient-light) !important;
+  color: var(--qframe-primary) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+/* =============================================================================
+   Admonitions personnalisées
+   ============================================================================= */
+
+/* Success avec style QFrame */
+.md-typeset .admonition.success,
+.md-typeset details.success {
+  border-color: var(--qframe-success);
+}
+
+.md-typeset .success > .admonition-title,
+.md-typeset .success > summary {
+  background: linear-gradient(135deg, var(--qframe-success), #66bb6a);
+  color: white;
+}
+
+/* Info avec gradient */
+.md-typeset .admonition.info,
+.md-typeset details.info {
+  border-color: var(--qframe-info);
+}
+
+.md-typeset .info > .admonition-title,
+.md-typeset .info > summary {
+  background: linear-gradient(135deg, var(--qframe-info), #42a5f5);
+  color: white;
+}
+
+/* Warning */
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-color: var(--qframe-warning);
+}
+
+.md-typeset .warning > .admonition-title,
+.md-typeset .warning > summary {
+  background: linear-gradient(135deg, var(--qframe-warning), #ffa726);
+  color: white;
+}
+
+/* =============================================================================
+   Tables et données
+   ============================================================================= */
+
+/* Tables avec style moderne */
+.md-typeset table:not([class]) {
+  border: 1px solid rgba(124, 77, 255, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--qframe-shadow);
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--qframe-gradient);
+  color: white;
+  font-weight: 600;
+  text-align: center;
+}
+
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background: var(--qframe-gradient-light);
+}
+
+.md-typeset table:not([class]) tr:hover {
+  background: rgba(124, 77, 255, 0.1);
+  transform: scale(1.01);
+  transition: all 0.2s ease;
+}
+
+/* =============================================================================
+   Boutons et interactions
+   ============================================================================= */
+
+/* Boutons avec style QFrame */
+.md-button {
+  background: var(--qframe-gradient) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 25px !important;
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: var(--qframe-shadow) !important;
+}
+
+.md-button:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--qframe-shadow-lg) !important;
+}
+
+/* =============================================================================
+   Métriques et cartes
+   ============================================================================= */
+
+/* Style pour les métriques de performance */
+.metric-card {
+  background: var(--qframe-gradient-light);
+  border: 1px solid rgba(124, 77, 255, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+  box-shadow: var(--qframe-shadow);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--qframe-shadow-lg);
+}
+
+.metric-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--qframe-primary);
+  margin-bottom: 10px;
+}
+
+.metric-value {
+  font-size: 2em;
+  font-weight: 800;
+  background: var(--qframe-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================================================
+   Code annotations spéciales
+   ============================================================================= */
+
+/* Annotations de code avec icônes */
+.md-annotation {
+  background: var(--qframe-gradient-light) !important;
+  border: 1px solid var(--qframe-primary) !important;
+  border-radius: 8px !important;
+}
+
+.md-annotation__index {
+  background: var(--qframe-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* =============================================================================
+   Diagrammes Mermaid personnalisés
+   ============================================================================= */
+
+/* Container pour diagrammes */
+.mermaid {
+  background: var(--qframe-gradient-light);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: var(--qframe-shadow);
+}
+
+/* =============================================================================
+   Navigation et TOC
+   ============================================================================= */
+
+/* Table des matières avec style */
+.md-nav__title {
+  font-weight: 700;
+  color: var(--qframe-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.9em;
+}
+
+/* =============================================================================
+   Responsive et mobile
+   ============================================================================= */
+
+@media screen and (max-width: 76.1875em) {
+  /* Ajustements mobile */
+  .md-header {
+    background: var(--qframe-primary) !important;
+  }
+
+  .metric-card {
+    margin: 10px 0;
+    padding: 15px;
+  }
+
+  .metric-value {
+    font-size: 1.5em;
+  }
+}
+
+/* =============================================================================
+   Animations et transitions
+   ============================================================================= */
+
+@keyframes qframe-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(124, 77, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(124, 77, 255, 0); }
+}
+
+.qframe-pulse {
+  animation: qframe-pulse 2s infinite;
+}
+
+/* =============================================================================
+   Print styles
+   ============================================================================= */
+
+@media print {
+  /* Optimisations pour impression */
+  .md-header,
+  .md-footer,
+  .md-sidebar {
+    display: none !important;
+  }
+
+  .md-content {
+    margin: 0 !important;
+  }
+
+  .metric-card {
+    border: 2px solid #000 !important;
+    background: white !important;
+  }
+}

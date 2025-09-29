@@ -6,12 +6,13 @@ Handlers pour les commandes liées au backtesting.
 Implémente le pattern CQRS pour les opérations de modification.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
+import uuid
 
-from ...core.handlers import Command, CommandHandler, CommandResult
+from ..base.command import Command, CommandHandler, CommandResult
 from ...domain.entities.backtest import (
     BacktestConfiguration, BacktestResult, BacktestStatus, BacktestType,
     WalkForwardConfig, MonteCarloConfig, RebalanceFrequency
@@ -22,7 +23,7 @@ from ...domain.repositories.backtest_repository import BacktestRepository
 
 # Commands
 
-@dataclass
+@dataclass(kw_only=True)
 class CreateBacktestConfigurationCommand(Command):
     """Commande pour créer une configuration de backtest"""
     name: str
@@ -44,6 +45,9 @@ class CreateBacktestConfigurationCommand(Command):
     tags: Optional[Dict[str, Any]] = None
     created_by: Optional[str] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class UpdateBacktestConfigurationCommand(Command):
@@ -64,12 +68,18 @@ class UpdateBacktestConfigurationCommand(Command):
     max_leverage: Optional[Decimal] = None
     tags: Optional[Dict[str, Any]] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class DeleteBacktestConfigurationCommand(Command):
     """Commande pour supprimer une configuration de backtest"""
     configuration_id: str
     force: bool = False  # Supprimer même s'il y a des résultats associés
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -79,6 +89,9 @@ class RunBacktestCommand(Command):
     name: Optional[str] = None  # Nom personnalisé pour ce run
     tags: Optional[Dict[str, Any]] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class StopBacktestCommand(Command):
@@ -86,11 +99,17 @@ class StopBacktestCommand(Command):
     result_id: str
     reason: Optional[str] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class DeleteBacktestResultCommand(Command):
     """Commande pour supprimer un résultat de backtest"""
     result_id: str
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -98,11 +117,17 @@ class ArchiveBacktestResultCommand(Command):
     """Commande pour archiver un résultat de backtest"""
     result_id: str
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class RestoreBacktestResultCommand(Command):
     """Commande pour restaurer un résultat archivé"""
     result_id: str
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -112,12 +137,18 @@ class CleanupOldBacktestResultsCommand(Command):
     keep_best: int = 10
     dry_run: bool = True
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class ExportBacktestResultsCommand(Command):
     """Commande pour exporter des résultats de backtest"""
     result_ids: List[str]
     format: str = "json"  # json, csv, excel
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -126,6 +157,9 @@ class ImportBacktestResultsCommand(Command):
     data: bytes
     format: str = "json"
     overwrite_existing: bool = False
+
+    def __post_init__(self):
+        super().__init__()
 
 
 # Command Handlers

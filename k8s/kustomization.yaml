@@ -1,0 +1,59 @@
+# 🔧 Kustomization pour déploiement QFrame
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace cible
+namespace: qframe
+
+# Ressources à déployer
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - storage.yaml
+  - postgres.yaml
+  - redis.yaml
+  - qframe-api.yaml
+  - qframe-ui.yaml
+  - monitoring.yaml
+  - ingress.yaml
+
+# Images à utiliser (override pour production)
+images:
+  - name: qframe/api
+    newTag: latest
+  - name: qframe/ui
+    newTag: latest
+
+# Configuration patches pour différents environnements
+patchesStrategicMerge:
+  - production-patches.yaml
+
+# Labels communs
+commonLabels:
+  app.kubernetes.io/name: qframe
+  app.kubernetes.io/instance: qframe-prod
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/component: quantitative-trading
+  app.kubernetes.io/part-of: qframe-platform
+
+# Annotations communes
+commonAnnotations:
+  deployment.kubernetes.io/revision: "1"
+  contact: "admin@qframe.com"
+
+# Générateurs de noms
+namePrefix: ""
+nameSuffix: ""
+
+# Configuration de remplacement
+replacements:
+  - source:
+      kind: ConfigMap
+      name: qframe-config
+      fieldPath: data.POSTGRES_DB
+    targets:
+      - select:
+          kind: Deployment
+          name: qframe-api
+        fieldPaths:
+          - spec.template.spec.containers.[name=qframe-api].env.[name=POSTGRES_DB].value

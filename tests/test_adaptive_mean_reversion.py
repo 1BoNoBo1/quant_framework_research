@@ -234,8 +234,10 @@ class TestAdaptiveMeanReversionStrategy:
         assert 'combined_signal' in signals.columns
         assert 'vol_adjusted_signal' in signals.columns
 
-        # Check signal range
-        assert signals['combined_signal'].between(-1, 1).all()
+        # Check signal range (excluding NaN values at start)
+        valid_signals = signals['combined_signal'].dropna()
+        assert len(valid_signals) > 0, "Should have some valid signals"
+        assert valid_signals.between(-1, 1).all(), f"Signals outside range: {valid_signals[~valid_signals.between(-1, 1)]}"
 
     def test_adaptive_filters(self, strategy, sample_market_data):
         """Test adaptive signal filtering."""
@@ -277,13 +279,14 @@ class TestAdaptiveMeanReversionStrategy:
 
     def test_data_validation(self, strategy):
         """Test market data validation."""
-        # Test valid data
+        # Test valid data (need at least min_data_points)
+        n_points = max(strategy.config.min_data_points, 60)  # Use at least 60 points
         valid_data = pd.DataFrame({
-            'open': [100, 101, 102],
-            'high': [102, 103, 104],
-            'low': [99, 100, 101],
-            'close': [101, 102, 103],
-            'volume': [1000, 1100, 1200]
+            'open': range(100, 100 + n_points),
+            'high': range(102, 102 + n_points),
+            'low': range(99, 99 + n_points),
+            'close': range(101, 101 + n_points),
+            'volume': range(1000, 1000 + n_points)
         })
 
         # Should not raise exception

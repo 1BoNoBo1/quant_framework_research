@@ -1,0 +1,85 @@
+# 💾 Persistent Volume Claims pour QFrame
+
+# PostgreSQL Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd  # Adapter selon le cluster
+---
+# Redis Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: fast-ssd
+---
+# Prometheus Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+# Grafana Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+---
+# QFrame Logs Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qframe-logs-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteMany  # Partagé entre API et UI
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+# QFrame Data Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qframe-data-pvc
+  namespace: qframe
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi  # Pour les données de marché
+  storageClassName: standard

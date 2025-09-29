@@ -1,0 +1,239 @@
+# 🚨 QFrame Business Logic Alerts
+groups:
+  # 💰 Trading & Portfolio Alerts
+  - name: qframe_trading_alerts
+    rules:
+      - alert: QFrameHighTradeFailureRate
+        expr: qframe:trade_success_rate_5m < 85
+        for: 2m
+        labels:
+          severity: critical
+          component: trading
+        annotations:
+          summary: "High trade failure rate detected"
+          description: "Trade success rate has dropped to {{ $value }}% over the last 5 minutes"
+          action: "Check order execution service and market connectivity"
+
+      - alert: QFrameTradeLatencyHigh
+        expr: qframe:avg_trade_latency_5m > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "Trade execution latency is high"
+          description: "Average trade latency is {{ $value }}s over the last 5 minutes"
+          action: "Check broker connectivity and system load"
+
+      - alert: QFramePortfolioDrawdownAlert
+        expr: |
+          (
+            (qframe_portfolio_balance_usd - qframe_portfolio_initial_balance_usd) /
+            qframe_portfolio_initial_balance_usd
+          ) * 100 < -10
+        for: 1m
+        labels:
+          severity: critical
+          component: portfolio
+        annotations:
+          summary: "Portfolio drawdown exceeds 10%"
+          description: "Portfolio {{ $labels.portfolio_id }} has a drawdown of {{ $value }}%"
+          action: "IMMEDIATE ATTENTION: Check strategies and consider stopping trading"
+
+      - alert: QFrameNoTradesGenerated
+        expr: increase(qframe_trades_total[15m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: trading
+        annotations:
+          summary: "No trades generated in 15 minutes"
+          description: "No trading activity detected in the last 15 minutes"
+          action: "Check strategy signals and market data feeds"
+
+  # 🤖 Strategy Alerts
+  - name: qframe_strategy_alerts
+    rules:
+      - alert: QFrameStrategyError
+        expr: increase(qframe_strategy_errors_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: strategy
+        annotations:
+          summary: "High strategy error rate"
+          description: "Strategy {{ $labels.strategy_name }} has {{ $value }} errors in 5 minutes"
+          action: "Check strategy logs and data quality"
+
+      - alert: QFrameStrategyStalled
+        expr: |
+          (time() - qframe_strategy_last_signal_timestamp) > 3600
+        for: 5m
+        labels:
+          severity: warning
+          component: strategy
+        annotations:
+          summary: "Strategy has not generated signals"
+          description: "Strategy {{ $labels.strategy_name }} last signal was {{ $value }}s ago"
+          action: "Check strategy health and market conditions"
+
+      - alert: QFrameMLModelDrift
+        expr: qframe_model_accuracy < 0.6
+        for: 10m
+        labels:
+          severity: warning
+          component: ml
+        annotations:
+          summary: "ML model accuracy degraded"
+          description: "Model {{ $labels.model_name }} accuracy is {{ $value }}"
+          action: "Consider model retraining or parameter adjustment"
+
+  # 📊 Data & Connectivity Alerts
+  - name: qframe_data_alerts
+    rules:
+      - alert: QFrameMarketDataStale
+        expr: |
+          (time() - qframe_market_data_last_update_timestamp) > 300
+        for: 2m
+        labels:
+          severity: critical
+          component: data
+        annotations:
+          summary: "Market data is stale"
+          description: "Market data for {{ $labels.symbol }} was last updated {{ $value }}s ago"
+          action: "Check data provider connectivity and API limits"
+
+      - alert: QFrameExchangeConnectionLost
+        expr: qframe_exchange_connection_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: connectivity
+        annotations:
+          summary: "Exchange connection lost"
+          description: "Connection to {{ $labels.exchange }} is down"
+          action: "URGENT: Check network and exchange status"
+
+      - alert: QFrameDataProviderAPILimitReached
+        expr: qframe_api_rate_limit_remaining < 100
+        for: 1m
+        labels:
+          severity: warning
+          component: data
+        annotations:
+          summary: "API rate limit nearly reached"
+          description: "{{ $labels.provider }} API has {{ $value }} requests remaining"
+          action: "Reduce API call frequency or upgrade plan"
+
+  # ⚡ Performance Alerts
+  - name: qframe_performance_alerts
+    rules:
+      - alert: QFrameAPIHighLatency
+        expr: qframe:api_response_time_p95_5m > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API response time is high"
+          description: "95th percentile API response time is {{ $value }}s"
+          action: "Check system load and database performance"
+
+      - alert: QFrameAPIErrorRate
+        expr: qframe:api_error_rate_5m > 5
+        for: 3m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ $value }}% over the last 5 minutes"
+          action: "Check application logs and dependencies"
+
+      - alert: QFrameBacktestTimeout
+        expr: qframe_backtest_duration_seconds > 1800
+        for: 1m
+        labels:
+          severity: warning
+          component: backtesting
+        annotations:
+          summary: "Backtest taking too long"
+          description: "Backtest {{ $labels.backtest_id }} running for {{ $value }}s"
+          action: "Check data size and system resources"
+
+  # 🔐 Security & Risk Alerts
+  - name: qframe_security_alerts
+    rules:
+      - alert: QFrameUnauthorizedAPIAccess
+        expr: increase(qframe_http_requests_total{status="401"}[5m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Multiple unauthorized API access attempts"
+          description: "{{ $value }} unauthorized access attempts in 5 minutes"
+          action: "Check API keys and potential security breach"
+
+      - alert: QFrameRiskLimitExceeded
+        expr: |
+          qframe_position_size_usd > qframe_risk_limit_position_size_usd
+        for: 1m
+        labels:
+          severity: critical
+          component: risk
+        annotations:
+          summary: "Position size exceeds risk limit"
+          description: "Position {{ $labels.symbol }} size ${{ $value }} exceeds limit"
+          action: "URGENT: Reduce position size immediately"
+
+      - alert: QFrameExcessiveVolatility
+        expr: qframe_portfolio_volatility_24h > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          component: risk
+        annotations:
+          summary: "Portfolio volatility is high"
+          description: "24h portfolio volatility is {{ $value }} (15%+)"
+          action: "Consider reducing exposure or adjusting strategies"
+
+  # 🏥 Health Monitoring
+  - name: qframe_health_alerts
+    rules:
+      - alert: QFrameServiceDown
+        expr: up{job=~"qframe-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "QFrame service is down"
+          description: "Service {{ $labels.job }} is not responding"
+          action: "URGENT: Check service health and restart if necessary"
+
+      - alert: QFrameHighMemoryUsage
+        expr: |
+          (
+            container_memory_usage_bytes{container=~"qframe-.*"} /
+            container_spec_memory_limit_bytes{container=~"qframe-.*"}
+          ) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Container {{ $labels.container }} using {{ $value }}% memory"
+          action: "Check for memory leaks and consider scaling"
+
+      - alert: QFrameDatabaseConnectionIssue
+        expr: qframe_database_connections_active > qframe_database_connections_max * 0.9
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value }} active connections out of {{ qframe_database_connections_max }}"
+          action: "Check for connection leaks and tune pool settings"

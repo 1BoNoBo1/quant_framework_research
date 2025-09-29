@@ -18,7 +18,7 @@ from ...domain.entities.order import (
 )
 from ...domain.repositories.order_repository import OrderRepository
 from ...domain.services.execution_service import (
-    ExecutionService, RoutingStrategy, ExecutionAlgorithm, ExecutionVenue, VenueQuote
+    ExecutionService, RoutingStrategy, ExecutionAlgorithm, VenueQuote
 )
 
 
@@ -37,6 +37,9 @@ class CreateOrderCommand(Command):
     priority: OrderPriority = OrderPriority.NORMAL
     notes: str = ""
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class SubmitOrderCommand(Command):
@@ -44,7 +47,10 @@ class SubmitOrderCommand(Command):
     order_id: str
     routing_strategy: RoutingStrategy = RoutingStrategy.BEST_PRICE
     execution_algorithm: ExecutionAlgorithm = ExecutionAlgorithm.IMMEDIATE
-    venue_preference: Optional[List[ExecutionVenue]] = None
+    venue_preference: Optional[List[str]] = None
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -55,12 +61,18 @@ class ModifyOrderCommand(Command):
     new_price: Optional[Decimal] = None
     new_priority: Optional[OrderPriority] = None
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class CancelOrderCommand(Command):
     """Commande pour annuler un ordre"""
     order_id: str
     reason: str = "User requested"
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -69,6 +81,9 @@ class ExecuteOrderCommand(Command):
     order_id: str
     market_data: Dict[str, Dict[str, Any]]  # venue -> quote data
     force_execution: bool = False
+
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -82,6 +97,9 @@ class AddExecutionCommand(Command):
     fees: Decimal = Decimal("0")
     liquidity_flag: str = "unknown"
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class CreateExecutionPlanCommand(Command):
@@ -91,6 +109,9 @@ class CreateExecutionPlanCommand(Command):
     routing_strategy: RoutingStrategy = RoutingStrategy.BEST_PRICE
     execution_algorithm: ExecutionAlgorithm = ExecutionAlgorithm.IMMEDIATE
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class CreateChildOrdersCommand(Command):
@@ -99,6 +120,9 @@ class CreateChildOrdersCommand(Command):
     execution_algorithm: ExecutionAlgorithm = ExecutionAlgorithm.TWAP
     num_slices: int = 5
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class BulkCancelOrdersCommand(Command):
@@ -106,12 +130,18 @@ class BulkCancelOrdersCommand(Command):
     order_ids: List[str]
     reason: str = "Bulk cancellation"
 
+    def __post_init__(self):
+        super().__init__()
+
 
 @dataclass
 class SetOrderPriorityCommand(Command):
     """Commande pour définir la priorité d'un ordre"""
     order_id: str
     priority: OrderPriority
+
+    def __post_init__(self):
+        super().__init__()
 
 
 class CreateOrderHandler(CommandHandler[CreateOrderCommand]):
@@ -436,7 +466,7 @@ class ExecuteOrderHandler(CommandHandler[ExecuteOrderCommand]):
             market_data = {}
             for venue_name, quote_data in command.market_data.items():
                 try:
-                    venue = ExecutionVenue(venue_name)
+                    venue = venue_name
                     quote = VenueQuote(
                         venue=venue,
                         symbol=order.symbol,
@@ -584,7 +614,7 @@ class CreateExecutionPlanHandler(CommandHandler[CreateExecutionPlanCommand]):
             market_data = {}
             for venue_name, quote_data in command.market_data.items():
                 try:
-                    venue = ExecutionVenue(venue_name)
+                    venue = venue_name
                     quote = VenueQuote(
                         venue=venue,
                         symbol=order.symbol,
@@ -650,8 +680,8 @@ class CreateChildOrdersHandler(CommandHandler[CreateChildOrdersCommand]):
 
             # Créer un plan d'exécution fictif pour les ordres enfants
             market_data = {
-                ExecutionVenue.BINANCE: VenueQuote(
-                    venue=ExecutionVenue.BINANCE,
+                "binance": VenueQuote(
+                    venue="binance",
                     symbol=parent_order.symbol,
                     bid_price=Decimal("100"),
                     ask_price=Decimal("101"),

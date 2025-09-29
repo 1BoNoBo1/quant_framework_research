@@ -1,0 +1,72 @@
+# 📊 Prometheus Configuration for QFrame Development
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'qframe-development'
+    environment: 'development'
+
+# 📋 Rule files (simplified for dev)
+rule_files:
+  - "qframe_dev_alerts.yml"
+
+# 🎯 Scrape configurations (simplified for development)
+scrape_configs:
+  # QFrame API Metrics
+  - job_name: 'qframe-api'
+    static_configs:
+      - targets: ['qframe-api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # QFrame UI Metrics
+  - job_name: 'qframe-ui'
+    static_configs:
+      - targets: ['qframe-ui:8501']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+    scrape_timeout: 10s
+
+  # PostgreSQL (development instance)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # Redis (development instance)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # Self monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+# 🚨 Alerting (disabled for development)
+alerting:
+  alertmanagers: []
+
+# 📈 Recording rules (simplified)
+recording_rules:
+  - name: qframe_dev_recording_rules
+    interval: 60s
+    rules:
+      # Basic performance metrics
+      - record: qframe:api_error_rate_5m
+        expr: |
+          (
+            rate(qframe_http_requests_total{status=~"4..|5.."}[5m]) /
+            rate(qframe_http_requests_total[5m])
+          ) * 100
+
+# 🔧 Storage (lighter retention for dev)
+storage:
+  tsdb:
+    path: /prometheus/data
+    retention.time: 7d
+    retention.size: 5GB

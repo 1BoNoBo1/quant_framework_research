@@ -1,0 +1,237 @@
+{
+  "timestamp": "2025-09-29T13:55:15.306069",
+  "global_score": 99.97999999999999,
+  "status": "\u2705 EXCELLENT - Feature engineering avanc\u00e9 op\u00e9rationnel",
+  "available_operators": 5,
+  "academic_alphas": 0,
+  "processor_features": 18,
+  "selected_features": 10,
+  "alpha_portfolio_size": 3,
+  "component_scores": {
+    "operators": 100.0,
+    "academic_alphas": 100.0,
+    "processor": 100,
+    "optimization": 100,
+    "portfolio": 99.89999999999999
+  },
+  "detailed_results": {
+    "operator_results": {
+      "operators_tested": 7,
+      "operators_successful": 7,
+      "operator_results": {
+        "ts_rank": {
+          "status": "success",
+          "output_length": 4297,
+          "execution_time": 0.5279862880706787,
+          "non_null_ratio": 1.0,
+          "sample_output": [
+            0.5,
+            1.0,
+            1.0
+          ]
+        },
+        "delta": {
+          "status": "success",
+          "output_length": 4292,
+          "execution_time": 0.0002110004425048828,
+          "non_null_ratio": 0.9988363974866186,
+          "sample_output": [
+            711.5345634342593,
+            565.6389566700163,
+            113.35539121709007
+          ]
+        },
+        "sign": {
+          "status": "success",
+          "output_length": 4297,
+          "execution_time": 0.00037384033203125,
+          "non_null_ratio": 1.0,
+          "sample_output": [
+            1,
+            1,
+            1
+          ]
+        },
+        "cs_rank": {
+          "status": "success",
+          "output_length": 4297,
+          "execution_time": 0.0003254413604736328,
+          "non_null_ratio": 1.0,
+          "sample_output": [
+            0.00023272050267628578,
+            0.00046544100535257155,
+            0.0013963230160577147
+          ]
+        },
+        "rolling_skew": {
+          "status": "success",
+          "output_length": 4277,
+          "execution_time": 0.0005164146423339844,
+          "non_null_ratio": 0.9955772811918063,
+          "sample_output": [
+            -0.23356786542869906,
+            -0.4582538554339992,
+            -0.38175786565977343
+          ]
+        },
+        "rolling_kurt": {
+          "status": "success",
+          "output_length": 4277,
+          "execution_time": 0.0005118846893310547,
+          "non_null_ratio": 0.9955772811918063,
+          "sample_output": [
+            -0.9609918053956069,
+            -0.728052867521454,
+            -0.8402614938866227
+          ]
+        },
+        "rolling_std": {
+          "status": "success",
+          "output_length": 4277,
+          "execution_time": 0.00048041343688964844,
+          "non_null_ratio": 0.9955772811918063,
+          "sample_output": [
+            0.013766668701120827,
+            0.013600252213401094,
+            0.01454787039463822
+          ]
+        }
+      },
+      "performance_metrics": {}
+    },
+    "academic_results": {
+      "alphas_tested": 3,
+      "alphas_successful": 3,
+      "alpha_results": {
+        "simple_correlation": {
+          "status": "success",
+          "output_length": 3244,
+          "execution_time": 0.0013005733489990234,
+          "non_null_ratio": 0.7549453106818711,
+          "mean_value": -0.009256801693701333,
+          "std_value": 0.3268205090324956,
+          "sample_output": [
+            -0.28493584648845177,
+            -0.2858252038640373,
+            -0.598960588263089
+          ]
+        },
+        "price_volume_ratio": {
+          "status": "success",
+          "output_length": 4288,
+          "execution_time": 0.0003006458282470703,
+          "non_null_ratio": 0.9979055154759134,
+          "mean_value": 5.2438029375750135e+252,
+          "std_value": Infinity,
+          "sample_output": [
+            0.8338894606355456,
+            0.8257142236909697,
+            0.7534816181195946
+          ]
+        },
+        "volatility_adjusted_return": {
+          "status": "success",
+          "output_length": 4277,
+          "execution_time": 0.0003662109375,
+          "non_null_ratio": 0.9953455899464743,
+          "mean_value": 8.889357330728734,
+          "std_value": 5.8124243924132735,
+          "sample_output": [
+            2.756216310148063,
+            2.1611698070967233,
+            2.844293098588583
+          ]
+        }
+      }
+    },
+    "processor_results": {
+      "status": "success",
+      "processor_initialized": true,
+      "execution_time": 1.6179900169372559,
+      "features_generated": 18,
+      "feature_names": [
+        "sign_returns",
+        "cs_rank_volume",
+        "product_close_5",
+        "scale_volume",
+        "skew_returns_20",
+        "kurt_returns_20",
+        "ts_rank_close_10",
+        "delta_close_5",
+        "argmax_high_20",
+        "argmin_low_20",
+        "wma_close_10",
+        "ema_volume_20",
+        "mad_close_15",
+        "cond_high_low",
+        "pow_volume_half",
+        "alpha_006",
+        "alpha_061",
+        "alpha_099"
+      ],
+      "output_shape": [
+        4297,
+        18
+      ],
+      "non_null_ratio": 1.0
+    },
+    "optimization_results": {
+      "optimization_performed": true,
+      "total_features": 18,
+      "features_with_correlation": 16,
+      "selected_features": [
+        "alpha_061",
+        "argmax_high_20",
+        "ts_rank_close_10",
+        "argmin_low_20",
+        "sign_returns",
+        "alpha_099",
+        "ema_volume_20",
+        "skew_returns_20",
+        "alpha_006",
+        "kurt_returns_20"
+      ],
+      "optimization_metrics": {
+        "mean_correlation": 0.16210289210300166,
+        "max_correlation": 0.5205284891956785,
+        "top_correlations": {
+          "alpha_061": 0.5205284891956785,
+          "argmax_high_20": 0.4141880119352295,
+          "ts_rank_close_10": 0.41069059501178296,
+          "argmin_low_20": 0.40141720538933967,
+          "sign_returns": 0.39447301686985714,
+          "alpha_099": 0.32107716032738204,
+          "ema_volume_20": 0.03659209069322929,
+          "skew_returns_20": 0.029853251525401622,
+          "alpha_006": 0.025935294973696624,
+          "kurt_returns_20": 0.01780499834059088
+        }
+      }
+    },
+    "alpha_portfolio": {
+      "alphas_in_portfolio": 3,
+      "alpha_weights": {
+        "enhanced_mean_reversion": 0.6390651193290587,
+        "volume_price_divergence": 0.32386732361116355,
+        "price_volume_correlation": 0.037067557059777656
+      },
+      "portfolio_metrics": {
+        "total_alphas": 3,
+        "weighted_alphas": 3,
+        "average_ic": 0.3333333333333333
+      },
+      "alpha_signals": {
+        "enhanced_mean_reversion": 4292,
+        "volume_price_divergence": 4278,
+        "price_volume_correlation": 3244
+      }
+    }
+  },
+  "recommendations": [
+    "\ud83d\ude80 Feature engineering avanc\u00e9 pr\u00eat pour production",
+    "\ud83e\udde0 Activer ensemble learning avec features g\u00e9n\u00e9r\u00e9es",
+    "\ud83d\udcca Int\u00e9grer features dans strat\u00e9gies existantes",
+    "\ud83e\udde0 Corriger op\u00e9rateurs symboliques manquants",
+    "\ud83c\udf93 Impl\u00e9menter plus de formules acad\u00e9miques"
+  ]
+}

@@ -31,6 +31,7 @@ class BacktestType(str, Enum):
     MONTE_CARLO = "monte_carlo"
     ROLLING_WINDOW = "rolling_window"
     MULTI_STRATEGY = "multi_strategy"
+    HISTORICAL_SIMULATION = "historical_simulation"
 
 
 class RebalanceFrequency(str, Enum):

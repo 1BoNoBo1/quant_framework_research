@@ -6,7 +6,7 @@ Service de domaine pour la logique métier complexe des portfolios.
 Gère l'optimisation d'allocation, le rééquilibrage, et les calculs de performance.
 """
 
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Optional, Tuple, Set, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
 from dataclasses import dataclass
@@ -14,7 +14,7 @@ import math
 import statistics
 
 from ..entities.portfolio import Portfolio, PortfolioSnapshot, RebalancingFrequency
-from ..value_objects.position import Position
+from ..entities.position import Position
 from ..value_objects.performance_metrics import PerformanceMetrics
 
 
@@ -703,3 +703,148 @@ class PortfolioService:
         if std_excess > 0:
             return mean_excess / std_excess
         return Decimal("0")
+
+    # === Méthodes d'alias pour compatibilité ===
+
+    def calculate_rebalancing_plan(
+        self,
+        portfolio: Portfolio,
+        target_allocations: Optional[Dict[str, Decimal]] = None,
+        rebalancing_threshold: Decimal = Decimal("0.05"),
+        transaction_cost_rate: Decimal = Decimal("0.001")
+    ) -> Optional[RebalancingPlan]:
+        """
+        Alias pour create_rebalancing_plan pour compatibilité avec les tests.
+        """
+        return self.create_rebalancing_plan(
+            portfolio, target_allocations, rebalancing_threshold, transaction_cost_rate
+        )
+
+    def calculate_risk_metrics(self, portfolio: Portfolio) -> Optional[Dict[str, Any]]:
+        """
+        Calcule les métriques de risque pour un portfolio.
+
+        Args:
+            portfolio: Portfolio à analyser
+
+        Returns:
+            Dictionnaire des métriques de risque ou None si pas assez de données
+        """
+        if len(portfolio.snapshots) < 2:
+            return None
+
+        try:
+            # Calculer métriques de base
+            returns = self._calculate_daily_returns(portfolio.snapshots)
+
+            if len(returns) < 2:
+                return None
+
+            return_floats = [float(r) for r in returns]
+            volatility = Decimal(str(statistics.stdev(return_floats)))
+
+            # VaR 95%
+            var_95 = self._calculate_var(returns, Decimal("0.95"))
+
+            # Maximum Drawdown
+            max_dd = self._calculate_max_drawdown(portfolio.snapshots)
+
+            # Sharpe ratio
+            avg_return = Decimal(str(statistics.mean(return_floats)))
+            annualized_return = self._annualize_return(avg_return, len(returns))
+            sharpe = self._calculate_sharpe_ratio(annualized_return, volatility)
+
+            return {
+                "volatility": float(volatility),
+                "var_95": float(var_95),
+                "max_drawdown": float(max_dd),
+                "sharpe_ratio": float(sharpe),
+                "avg_daily_return": float(avg_return),
+                "observation_count": len(returns)
+            }
+
+        except Exception as e:
+            # En cas d'erreur, retourner métriques simplifiées
+            return {
+                "volatility": 0.0,
+                "var_95": 0.0,
+                "max_drawdown": 0.0,
+                "sharpe_ratio": 0.0,
+                "avg_daily_return": 0.0,
+                "observation_count": 0,
+                "error": str(e)
+            }
+
+    def calculate_concentration_risk(self, portfolio: Portfolio) -> Decimal:
+        """
+        Calcule le risque de concentration du portfolio.
+
+        Args:
+            portfolio: Portfolio à analyser
+
+        Returns:
+            Score de concentration (0 = très diversifié, 1 = très concentré)
+        """
+        if not portfolio.positions or portfolio.total_value == 0:
+            return Decimal("0")
+
+        # Calculer l'indice Herfindahl-Hirschman (HHI)
+        allocations = portfolio.get_allocation_percentages()
+
+        # Exclure le cash du calcul de concentration
+        position_allocations = {k: v for k, v in allocations.items() if k != "CASH"}
+
+        if not position_allocations:
+            return Decimal("0")
+
+        # HHI = somme des carrés des poids
+        hhi = sum(Decimal(str(weight)) ** 2 for weight in position_allocations.values())
+
+        # Normaliser: HHI varie de 1/n (très diversifié) à 1 (très concentré)
+        # où n est le nombre de positions
+        n_positions = len(position_allocations)
+        min_hhi = Decimal("1") / Decimal(str(n_positions))
+
+        if min_hhi >= 1:
+            return Decimal("0")
+
+        # Score normalisé entre 0 et 1
+        concentration_score = (hhi - min_hhi) / (Decimal("1") - min_hhi)
+
+        return min(concentration_score, Decimal("1"))
+
+    def estimate_correlation_risk(self, portfolio: Portfolio) -> Decimal:
+        """
+        Estime le risque de corrélation du portfolio.
+
+        Args:
+            portfolio: Portfolio à analyser
+
+        Returns:
+            Score de corrélation estimé (0 = faible corrélation, 1 = forte corrélation)
+        """
+        if not portfolio.positions or len(portfolio.positions) < 2:
+            return Decimal("0")
+
+        # Estimation simplifiée basée sur les secteurs/types d'actifs
+        symbols = list(portfolio.positions.keys())
+
+        # Heuristiques simples pour estimer la corrélation
+        crypto_count = sum(1 for symbol in symbols if any(
+            crypto in symbol.upper() for crypto in ["BTC", "ETH", "ADA", "DOT", "SOL", "USDT", "USDC"]
+        ))
+
+        stock_count = len(symbols) - crypto_count
+
+        # Si tout est crypto ou tout est stock -> haute corrélation
+        if crypto_count == len(symbols) or stock_count == len(symbols):
+            correlation_risk = Decimal("0.8")  # 80% de risque de corrélation
+        else:
+            # Mix crypto/stock -> corrélation modérée
+            correlation_risk = Decimal("0.4")  # 40% de risque de corrélation
+
+        # Ajuster selon le nombre de positions
+        # Plus de positions = généralement moins de corrélation
+        position_factor = max(Decimal("0.5"), Decimal("1") - Decimal(str(len(symbols))) / Decimal("20"))
+
+        return correlation_risk * position_factor

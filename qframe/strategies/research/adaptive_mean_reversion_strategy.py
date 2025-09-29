@@ -28,16 +28,16 @@ except ImportError:
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-import logging
 import asyncio
 
 from qframe.core.interfaces import BaseStrategy, Signal, SignalAction, DataProvider, RiskManager
 from qframe.features.symbolic_operators import SymbolicOperators
 from qframe.core.parallel_processor import ParallelProcessor, create_parallel_processor
+from qframe.infrastructure.observability.logging import LoggerFactory
 # from qframe.core.container import inject  # Not needed for basic implementation
 from .adaptive_mean_reversion_config import AdaptiveMeanReversionConfig
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 @dataclass
 class AdaptiveMeanReversionSignal:
@@ -292,7 +292,7 @@ class AdaptiveMeanReversionStrategy(BaseStrategy):
         self,
         data: pd.DataFrame,
         features: Optional[pd.DataFrame] = None
-    ) -> List[Signal]:
+    ) -> List[AdaptiveMeanReversionSignal]:
         """
         Generate trading signals based on adaptive mean reversion with ML regime detection.
 
@@ -301,7 +301,7 @@ class AdaptiveMeanReversionStrategy(BaseStrategy):
             features: Optional pre-computed features
 
         Returns:
-            List of Signal objects
+            List of AdaptiveMeanReversionSignal objects
         """
         try:
             logger.info(f"Generating signals for {len(data)} rows of market data")
@@ -656,6 +656,10 @@ class AdaptiveMeanReversionStrategy(BaseStrategy):
         else:
             signals['vol_adjusted_signal'] = signals['combined_signal']
 
+        # Ensure signals stay within [-1, 1] range
+        signals['combined_signal'] = np.clip(signals['combined_signal'], -1.0, 1.0)
+        signals['vol_adjusted_signal'] = np.clip(signals['vol_adjusted_signal'], -1.0, 1.0)
+
         return signals
 
     def _apply_adaptive_filters(
@@ -727,42 +731,37 @@ class AdaptiveMeanReversionStrategy(BaseStrategy):
         signals: pd.DataFrame,
         regime: str,
         market_data: pd.DataFrame
-    ) -> List[Signal]:
-        """Create QFrame Signal objects from filtered signals."""
+    ) -> List[AdaptiveMeanReversionSignal]:
+        """Create AdaptiveMeanReversionSignal objects from filtered signals."""
         signal_objects = []
 
         for timestamp, row in signals.iterrows():
             position_size = row.get('position_size', 0)
             if abs(position_size) > self.config.min_signal_strength:
-                # Determine action based on signal direction
-                if position_size > 0:
-                    action = SignalAction.BUY
-                elif position_size < 0:
-                    action = SignalAction.SELL
-                else:
-                    action = SignalAction.HOLD
+                # Calculate confidence
+                confidence = self._calculate_signal_confidence(row)
 
-                # Get current price
-                try:
-                    current_price = market_data.loc[timestamp, 'close']
-                except (KeyError, IndexError):
-                    current_price = market_data['close'].iloc[-1]
+                # Calculate mean reversion score
+                mean_reversion_score = row.get('combined_signal', 0.0)
 
-                signal = Signal(
+                # Calculate volatility adjustment
+                volatility_adjustment = (
+                    row.get('vol_adjusted_signal', 0.0) / row.get('combined_signal', 1.0)
+                    if row.get('combined_signal', 0.0) != 0 else 1.0
+                )
+
+                signal = AdaptiveMeanReversionSignal(
                     timestamp=timestamp,
                     symbol=self.config.universe[0] if self.config.universe else 'BTC/USDT',
-                    action=action,
-                    strength=abs(position_size),
-                    price=current_price,
-                    size=abs(position_size) * self.config.max_position_size,
+                    signal=position_size,  # Raw signal value
+                    confidence=confidence,
+                    regime=regime,
+                    mean_reversion_score=mean_reversion_score,
+                    volatility_adjustment=volatility_adjustment,
                     metadata={
-                        'regime': regime,
                         'signal_strength': abs(position_size),
                         'filtered_signal': row.get('rsi_filtered_signal', 0.0),
                         'raw_signal': row.get('combined_signal', 0.0),
-                        'confidence': self._calculate_signal_confidence(row),
-                        'mean_reversion_score': row.get('combined_signal', 0.0),
-                        'volatility_adjustment': row.get('vol_adjusted_signal', 0.0) / row.get('combined_signal', 1.0) if row.get('combined_signal', 0.0) != 0 else 1.0,
                         'strategy': 'adaptive_mean_reversion'
                     }
                 )
@@ -797,6 +796,50 @@ class AdaptiveMeanReversionStrategy(BaseStrategy):
         """Handle errors in signal generation."""
         logger.error(f"Signal generation error: {str(error)}")
         # Additional error handling logic here
+
+    def _calculate_max_drawdown(self, returns: pd.Series) -> float:
+        """Calculate maximum drawdown from returns series."""
+        if hasattr(self, 'parallel_processor') and self.parallel_processor:
+            return self.parallel_processor._calculate_max_drawdown(returns)
+        else:
+            # Fallback implementation
+            cumulative = (1 + returns).cumprod()
+            running_max = cumulative.expanding().max()
+            drawdown = (cumulative - running_max) / running_max
+            return float(drawdown.min())
+
+    def _calculate_sortino_ratio(self, returns: pd.Series, risk_free_rate: float = 0.0) -> float:
+        """Calculate Sortino ratio from returns series."""
+        if hasattr(self, 'parallel_processor') and hasattr(self.parallel_processor, '_calculate_sortino_ratio'):
+            return self.parallel_processor._calculate_sortino_ratio(returns, risk_free_rate)
+        else:
+            # Fallback implementation
+            excess_returns = returns - risk_free_rate / 252  # Daily risk-free rate
+            downside_returns = excess_returns[excess_returns < 0]
+
+            if len(downside_returns) == 0:
+                return float('inf')
+
+            downside_deviation = downside_returns.std() * np.sqrt(252)
+
+            if downside_deviation == 0:
+                return float('inf')
+
+            return float((excess_returns.mean() * 252) / downside_deviation)
+
+    def _calculate_profit_factor(self, returns: pd.Series) -> float:
+        """Calculate profit factor from returns series."""
+        if hasattr(self, 'parallel_processor') and hasattr(self.parallel_processor, '_calculate_profit_factor'):
+            return self.parallel_processor._calculate_profit_factor(returns)
+        else:
+            # Fallback implementation
+            positive_returns = returns[returns > 0].sum()
+            negative_returns = abs(returns[returns < 0].sum())
+
+            if negative_returns == 0:
+                return float('inf')
+
+            return float(positive_returns / negative_returns)
 
     def get_strategy_info(self) -> Dict[str, any]:
         """Get strategy information and current state."""

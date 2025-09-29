@@ -6,6 +6,7 @@ Adaptateur pour l'exécution d'ordres via des courtiers externes.
 Interface entre le domaine et les services de courtage.
 """
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Protocol
 from decimal import Decimal
@@ -13,7 +14,7 @@ from datetime import datetime
 import logging
 
 from qframe.domain.entities.order import (
-    Order, OrderExecution, OrderStatus, OrderSide, OrderType, ExecutionVenue
+    Order, OrderExecution, OrderStatus, OrderSide, OrderType
 )
 from qframe.domain.services.execution_service import VenueQuote, ExecutionPlan
 
@@ -48,13 +49,13 @@ class OrderExecutionAdapter:
     """
 
     def __init__(self):
-        self._brokers: Dict[ExecutionVenue, BrokerAdapter] = {}
+        self._brokers: Dict[str, BrokerAdapter] = {}
         self._order_mappings: Dict[str, Dict[str, str]] = {}  # order_id -> {venue -> broker_order_id}
 
-    def register_broker(self, venue: ExecutionVenue, adapter: BrokerAdapter) -> None:
+    def register_broker(self, venue: str, adapter: BrokerAdapter) -> None:
         """Enregistre un adaptateur de courtier pour une venue"""
         self._brokers[venue] = adapter
-        logger.info(f"🏦 Broker adapter registered for venue: {venue.value}")
+        logger.info(f"🏦 Broker adapter registered for venue: {venue}")
 
     async def execute_order_plan(self, order: Order, execution_plan: ExecutionPlan) -> List[OrderExecution]:
         """
@@ -72,26 +73,30 @@ class OrderExecutionAdapter:
         if order.id not in self._order_mappings:
             self._order_mappings[order.id] = {}
 
-        for allocation in execution_plan.allocations:
-            venue = allocation.venue
+        for i, instruction in enumerate(execution_plan.slice_instructions):
+            venue = instruction["venue"]
 
             if venue not in self._brokers:
-                logger.error(f"❌ No broker adapter for venue: {venue.value}")
+                logger.error(f"❌ No broker adapter for venue: {venue}")
                 continue
 
             broker = self._brokers[venue]
 
             try:
-                # Créer un ordre partiel pour cette allocation
+                # Déterminer le type d'ordre et le prix
+                order_type = OrderType.MARKET if instruction.get("order_type") == "market" else OrderType.LIMIT
+                price = order.price if order_type == OrderType.LIMIT else None
+
+                # Créer un ordre partiel pour cette instruction
                 partial_order = Order(
                     symbol=order.symbol,
                     side=order.side,
-                    order_type=order.order_type,
-                    quantity=allocation.quantity,
-                    price=allocation.price,
+                    order_type=order_type,
+                    quantity=Decimal(str(instruction["quantity"])),
+                    price=price,
                     strategy_id=order.strategy_id,
                     parent_order_id=order.id,
-                    tags={**order.tags, "allocation_id": allocation.id, "venue": venue.value}
+                    tags={**order.tags, "slice_id": str(i), "venue": venue}
                 )
 
                 # Soumettre l'ordre au courtier
@@ -99,7 +104,7 @@ class OrderExecutionAdapter:
                 broker_order_id = broker_response.get("order_id")
 
                 if broker_order_id:
-                    self._order_mappings[order.id][venue.value] = broker_order_id
+                    self._order_mappings[order.id][venue] = broker_order_id
 
                     # Surveiller l'exécution
                     venue_executions = await self._monitor_execution(
@@ -108,10 +113,10 @@ class OrderExecutionAdapter:
                     executions.extend(venue_executions)
 
                 else:
-                    logger.error(f"❌ Failed to submit order to {venue.value}: {broker_response}")
+                    logger.error(f"❌ Failed to submit order to {venue}: {broker_response}")
 
             except Exception as e:
-                logger.error(f"❌ Error executing order on {venue.value}: {e}")
+                logger.error(f"❌ Error executing order on {venue}: {e}")
 
         return executions
 
@@ -120,7 +125,7 @@ class OrderExecutionAdapter:
         order: Order,
         broker_order_id: str,
         broker: BrokerAdapter,
-        venue: ExecutionVenue
+        venue: str
     ) -> List[OrderExecution]:
         """
         Surveille l'exécution d'un ordre chez un courtier.
@@ -137,8 +142,18 @@ class OrderExecutionAdapter:
         executions = []
 
         try:
-            # Récupérer le statut de l'ordre
-            status_response = await broker.get_order_status(broker_order_id)
+            # Pour les ordres market, attendre que l'exécution se termine
+            if order.order_type == OrderType.MARKET:
+                # Attendre jusqu'à 1 seconde pour l'exécution
+                max_wait = 10  # 10 tentatives de 0.1 seconde
+                for _ in range(max_wait):
+                    await asyncio.sleep(0.1)
+                    status_response = await broker.get_order_status(broker_order_id)
+                    if status_response and status_response.get("status") in ["filled", "rejected", "cancelled"]:
+                        break
+            else:
+                # Pour les ordres limite, vérifier une seule fois
+                status_response = await broker.get_order_status(broker_order_id)
 
             if not status_response:
                 logger.warning(f"⚠️ No status response for order {broker_order_id}")
@@ -149,12 +164,12 @@ class OrderExecutionAdapter:
 
             for exec_data in broker_executions:
                 execution = OrderExecution(
-                    price=Decimal(str(exec_data.get("price", 0))),
-                    quantity=Decimal(str(exec_data.get("quantity", 0))),
-                    timestamp=datetime.fromisoformat(exec_data.get("timestamp")) if exec_data.get("timestamp") else datetime.utcnow(),
+                    executed_quantity=Decimal(str(exec_data.get("quantity", 0))),
+                    execution_price=Decimal(str(exec_data.get("price", 0))),
+                    execution_time=datetime.fromisoformat(exec_data.get("timestamp")) if exec_data.get("timestamp") else datetime.utcnow(),
                     venue=venue,
-                    fee=Decimal(str(exec_data.get("fee", 0))) if exec_data.get("fee") else None,
-                    commission=Decimal(str(exec_data.get("commission", 0))) if exec_data.get("commission") else None
+                    fees=Decimal(str(exec_data.get("fee", 0))) if exec_data.get("fee") else Decimal("0"),
+                    commission=Decimal(str(exec_data.get("commission", 0))) if exec_data.get("commission") else Decimal("0")
                 )
                 executions.append(execution)
 
@@ -163,7 +178,7 @@ class OrderExecutionAdapter:
 
         return executions
 
-    async def cancel_order(self, order_id: str, venue: Optional[ExecutionVenue] = None) -> Dict[str, bool]:
+    async def cancel_order(self, order_id: str, venue: Optional[str] = None) -> Dict[str, bool]:
         """
         Annule un ordre sur toutes les venues ou une venue spécifique.
 
@@ -184,7 +199,7 @@ class OrderExecutionAdapter:
 
         for venue_key in venues_to_cancel:
             try:
-                venue_enum = ExecutionVenue(venue_key)
+                venue_enum = str(venue_key)
                 if venue_enum not in self._brokers:
                     results[venue_key] = False
                     continue
@@ -209,7 +224,7 @@ class OrderExecutionAdapter:
 
         return results
 
-    async def get_market_data(self, symbol: str, venues: Optional[List[ExecutionVenue]] = None) -> Dict[ExecutionVenue, VenueQuote]:
+    async def get_market_data(self, symbol: str, venues: Optional[List[str]] = None) -> Dict[str, VenueQuote]:
         """
         Récupère les données de marché pour un symbole sur plusieurs venues.
 
@@ -233,7 +248,7 @@ class OrderExecutionAdapter:
                 quotes[venue] = quote
 
             except Exception as e:
-                logger.error(f"❌ Error getting market data for {symbol} on {venue.value}: {e}")
+                logger.error(f"❌ Error getting market data for {symbol} on {venue}: {e}")
 
         return quotes
 
@@ -254,7 +269,7 @@ class OrderExecutionAdapter:
 
         for venue_key, broker_order_id in self._order_mappings[order_id].items():
             try:
-                venue = ExecutionVenue(venue_key)
+                venue = str(venue_key)
                 if venue not in self._brokers:
                     continue
 
@@ -267,11 +282,11 @@ class OrderExecutionAdapter:
 
         return statuses
 
-    def get_supported_venues(self) -> List[ExecutionVenue]:
+    def get_supported_venues(self) -> List[str]:
         """Retourne la liste des venues supportées"""
         return list(self._brokers.keys())
 
-    def is_venue_available(self, venue: ExecutionVenue) -> bool:
+    def is_venue_available(self, venue: str) -> bool:
         """Vérifie si une venue est disponible"""
         return venue in self._brokers
 
@@ -292,10 +307,10 @@ class OrderExecutionAdapter:
                 else:
                     venue_health = {"status": "unknown", "note": "No health check method"}
 
-                health_status["venues"][venue.value] = venue_health
+                health_status["venues"][venue] = venue_health
 
             except Exception as e:
-                health_status["venues"][venue.value] = {
+                health_status["venues"][venue] = {
                     "status": "error",
                     "error": str(e)
                 }

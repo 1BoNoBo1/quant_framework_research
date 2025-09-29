@@ -6,10 +6,10 @@ Système de configuration type-safe et validé pour tout le framework.
 Supporte les environnements multiples et la validation automatique.
 """
 
-from typing import Optional, Dict, Any, List
-from pathlib import Path
 import os
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
@@ -17,6 +17,7 @@ from pydantic_settings import BaseSettings
 
 class Environment(str, Enum):
     """Environnements d'exécution"""
+
     DEVELOPMENT = "development"
     TESTING = "testing"
     PRODUCTION = "production"
@@ -25,6 +26,7 @@ class Environment(str, Enum):
 
 class LogLevel(str, Enum):
     """Niveaux de logging"""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -34,6 +36,7 @@ class LogLevel(str, Enum):
 
 class DatabaseConfig(BaseSettings):
     """Configuration base de données"""
+
     host: str = "localhost"
     port: int = 5432
     database: str = "quant_framework"
@@ -44,23 +47,24 @@ class DatabaseConfig(BaseSettings):
     echo: bool = False
 
     model_config = {
-        'env_prefix': 'DB_',
-        'case_sensitive': False,
-        'env_file': '.env',
-        'env_file_encoding': 'utf-8',
-        'extra': 'ignore'
+        "env_prefix": "DB_",
+        "case_sensitive": False,
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
-    @field_validator('port')
+    @field_validator("port")
     @classmethod
     def validate_port(cls, v):
         if not 1 <= v <= 65535:
-            raise ValueError('Port must be between 1 and 65535')
+            raise ValueError("Port must be between 1 and 65535")
         return v
 
 
 class RedisConfig(BaseSettings):
     """Configuration Redis pour cache"""
+
     host: str = "localhost"
     port: int = 6379
     db: int = 0
@@ -70,59 +74,113 @@ class RedisConfig(BaseSettings):
     socket_connect_timeout: float = 5.0
 
     model_config = {
-        'env_prefix': 'REDIS_',
-        'case_sensitive': False,
-        'env_file': '.env',
-        'env_file_encoding': 'utf-8',
-        'extra': 'ignore'
+        "env_prefix": "REDIS_",
+        "case_sensitive": False,
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
 
 class MLFlowConfig(BaseModel):
     """Configuration MLflow"""
+
     tracking_uri: str = "http://localhost:5000"
     experiment_name: str = "quant_framework"
     artifact_location: Optional[str] = None
     registry_uri: Optional[str] = None
 
-    @field_validator('tracking_uri')
+    @field_validator("tracking_uri")
     @classmethod
     def validate_tracking_uri(cls, v):
-        if not (v.startswith('http://') or v.startswith('https://') or v.startswith('file://')):
-            raise ValueError('tracking_uri must be a valid URL or file path')
+        if not (
+            v.startswith("http://")
+            or v.startswith("https://")
+            or v.startswith("file://")
+        ):
+            raise ValueError("tracking_uri must be a valid URL or file path")
         return v
 
 
 class DataProviderConfig(BaseModel):
     """Configuration pour fournisseurs de données"""
+
     name: str
-    api_key: Optional[str] = Field(None, env="DATA_API_KEY")
-    api_secret: Optional[str] = Field(None, env="DATA_API_SECRET")
+    api_key: Optional[str] = Field(
+        None, env="DATA_API_KEY", description="API Key (will be encrypted)"
+    )
+    api_secret: Optional[str] = Field(
+        None, env="DATA_API_SECRET", description="API Secret (will be encrypted)"
+    )
     base_url: Optional[str] = None
     rate_limit: int = 1200  # Requêtes par minute
     timeout: float = 30.0
     retry_attempts: int = 3
     retry_delay: float = 1.0
 
+    def __post_init__(self):
+        """Chiffrement automatique des secrets sensibles"""
+        try:
+            from qframe.infrastructure.security.encryption import get_secret_manager
+
+            secret_manager = get_secret_manager()
+
+            if self.api_key and not self.api_key.startswith("enc:"):
+                self.api_key = "enc:" + secret_manager.encrypt(self.api_key)
+
+            if self.api_secret and not self.api_secret.startswith("enc:"):
+                self.api_secret = "enc:" + secret_manager.encrypt(self.api_secret)
+        except Exception:
+            # Fallback silencieux si le chiffrement échoue
+            pass
+
+    def get_decrypted_api_key(self) -> Optional[str]:
+        """Récupère l'API key déchiffrée"""
+        if not self.api_key:
+            return None
+        if self.api_key.startswith("enc:"):
+            try:
+                from qframe.infrastructure.security.encryption import get_secret_manager
+
+                return get_secret_manager().decrypt(self.api_key[4:])
+            except Exception:
+                return self.api_key[4:]  # Fallback
+        return self.api_key
+
+    def get_decrypted_api_secret(self) -> Optional[str]:
+        """Récupère l'API secret déchiffré"""
+        if not self.api_secret:
+            return None
+        if self.api_secret.startswith("enc:"):
+            try:
+                from qframe.infrastructure.security.encryption import get_secret_manager
+
+                return get_secret_manager().decrypt(self.api_secret[4:])
+            except Exception:
+                return self.api_secret[4:]  # Fallback
+        return self.api_secret
+
 
 class StrategyConfig(BaseModel):
     """Configuration de base pour les stratégies"""
+
     name: str
     enabled: bool = True
     position_size: float = Field(0.02, ge=0.001, le=1.0)
     max_positions: int = Field(5, ge=1, le=50)
     risk_per_trade: float = Field(0.02, ge=0.001, le=0.1)
 
-    @field_validator('position_size')
+    @field_validator("position_size")
     @classmethod
     def validate_position_size(cls, v):
         if not 0.001 <= v <= 1.0:
-            raise ValueError('position_size must be between 0.001 and 1.0')
+            raise ValueError("position_size must be between 0.001 and 1.0")
         return v
 
 
 class RiskManagementConfig(BaseModel):
     """Configuration gestion des risques"""
+
     max_portfolio_risk: float = Field(0.1, ge=0.01, le=0.5)
     max_correlation: float = Field(0.7, ge=0.1, le=1.0)
     var_confidence: float = Field(0.95, ge=0.9, le=0.99)
@@ -136,6 +194,7 @@ class RiskManagementConfig(BaseModel):
 
 class BacktestConfig(BaseModel):
     """Configuration backtesting"""
+
     start_date: str = "2023-01-01"
     end_date: str = "2024-01-01"
     initial_capital: float = Field(100000.0, ge=1000.0)
@@ -149,19 +208,103 @@ class BacktestConfig(BaseModel):
 
 class TradingConfig(BaseModel):
     """Configuration trading live"""
+
     broker: str = "binance"
     testnet: bool = True
-    api_key: Optional[str] = Field(None, env="TRADING_API_KEY")
-    api_secret: Optional[str] = Field(None, env="TRADING_API_SECRET")
+    api_key: Optional[str] = Field(
+        None, env="TRADING_API_KEY", description="Trading API Key (encrypted)"
+    )
+    api_secret: Optional[str] = Field(
+        None, env="TRADING_API_SECRET", description="Trading API Secret (encrypted)"
+    )
+    passphrase: Optional[str] = Field(
+        None, env="TRADING_PASSPHRASE", description="Trading passphrase (encrypted)"
+    )
 
     # Paramètres de trading
     min_order_size: float = Field(10.0, ge=1.0)
     max_order_size: float = Field(10000.0, ge=100.0)
     order_timeout: int = Field(300, ge=30, le=3600)  # secondes
 
+    def __post_init__(self):
+        """Chiffrement automatique des secrets sensibles"""
+        try:
+            from qframe.infrastructure.security.encryption import get_secret_manager
+
+            secret_manager = get_secret_manager()
+
+            # Chiffrer API key
+            if self.api_key and not self.api_key.startswith("enc:"):
+                self.api_key = "enc:" + secret_manager.encrypt(self.api_key)
+
+            # Chiffrer API secret
+            if self.api_secret and not self.api_secret.startswith("enc:"):
+                self.api_secret = "enc:" + secret_manager.encrypt(self.api_secret)
+
+            # Chiffrer passphrase
+            if self.passphrase and not self.passphrase.startswith("enc:"):
+                self.passphrase = "enc:" + secret_manager.encrypt(self.passphrase)
+
+        except Exception:
+            # Fallback silencieux
+            pass
+
+    def get_decrypted_credentials(self) -> Dict[str, Optional[str]]:
+        """Récupère toutes les credentials déchiffrées"""
+        try:
+            from qframe.infrastructure.security.encryption import get_secret_manager
+
+            secret_manager = get_secret_manager()
+
+            result = {}
+
+            # API Key
+            if self.api_key:
+                if self.api_key.startswith("enc:"):
+                    result["api_key"] = secret_manager.decrypt(self.api_key[4:])
+                else:
+                    result["api_key"] = self.api_key
+            else:
+                result["api_key"] = None
+
+            # API Secret
+            if self.api_secret:
+                if self.api_secret.startswith("enc:"):
+                    result["api_secret"] = secret_manager.decrypt(self.api_secret[4:])
+                else:
+                    result["api_secret"] = self.api_secret
+            else:
+                result["api_secret"] = None
+
+            # Passphrase
+            if self.passphrase:
+                if self.passphrase.startswith("enc:"):
+                    result["passphrase"] = secret_manager.decrypt(self.passphrase[4:])
+                else:
+                    result["passphrase"] = self.passphrase
+            else:
+                result["passphrase"] = None
+
+            return result
+
+        except Exception:
+            # Fallback: retourner tel quel
+            return {
+                "api_key": self.api_key[4:]
+                if self.api_key and self.api_key.startswith("enc:")
+                else self.api_key,
+                "api_secret": self.api_secret[4:]
+                if self.api_secret and self.api_secret.startswith("enc:")
+                else self.api_secret,
+                "passphrase": self.passphrase[4:]
+                if self.passphrase and self.passphrase.startswith("enc:")
+                else self.passphrase,
+            }
+
 
 class AlertConfig(BaseModel):
     """Configuration alertes"""
+
     enabled: bool = True
     email_enabled: bool = False
     slack_enabled: bool = False
@@ -190,7 +333,9 @@ class FrameworkConfig(BaseSettings):
     config_dir: Optional[str] = None
 
     # Chemins
-    project_root: Path = Field(default_factory=lambda: Path(__file__).parent.parent.parent)
+    project_root: Path = Field(
+        default_factory=lambda: Path(__file__).parent.parent.parent
+    )
     data_dir: Path = Field(default_factory=lambda: Path("data"))
     logs_dir: Path = Field(default_factory=lambda: Path("logs"))
     artifacts_dir: Path = Field(default_factory=lambda: Path("artifacts"))
@@ -219,41 +364,32 @@ class FrameworkConfig(BaseSettings):
     alerts: AlertConfig = AlertConfig()
 
     # Fournisseurs de données
-    data_providers: Dict[str, DataProviderConfig] = Field(default_factory=lambda: {
-        "binance": DataProviderConfig(
-            name="binance",
-            base_url="https://api.binance.com",
-            rate_limit=1200
-        ),
-        "yfinance": DataProviderConfig(
-            name="yfinance",
-            rate_limit=2000
-        )
-    })
+    data_providers: Dict[str, DataProviderConfig] = Field(
+        default_factory=lambda: {
+            "binance": DataProviderConfig(
+                name="binance", base_url="https://api.binance.com", rate_limit=1200
+            ),
+            "yfinance": DataProviderConfig(name="yfinance", rate_limit=2000),
+        }
+    )
 
     # Stratégies configurées
-    strategies: Dict[str, StrategyConfig] = Field(default_factory=lambda: {
-        "dmn_lstm": StrategyConfig(
-            name="DMN_LSTM",
-            position_size=0.02,
-            max_positions=3
-        ),
-        "mean_reversion": StrategyConfig(
-            name="Adaptive_Mean_Reversion",
-            position_size=0.015,
-            max_positions=5
-        ),
-        "funding_arbitrage": StrategyConfig(
-            name="Funding_Arbitrage",
-            position_size=0.01,
-            max_positions=2
-        ),
-        "rl_alpha": StrategyConfig(
-            name="RL_Alpha_Generator",
-            position_size=0.02,
-            max_positions=3
-        )
-    })
+    strategies: Dict[str, StrategyConfig] = Field(
+        default_factory=lambda: {
+            "dmn_lstm": StrategyConfig(
+                name="DMN_LSTM", position_size=0.02, max_positions=3
+            ),
+            "mean_reversion": StrategyConfig(
+                name="Adaptive_Mean_Reversion", position_size=0.015, max_positions=5
+            ),
+            "funding_arbitrage": StrategyConfig(
+                name="Funding_Arbitrage", position_size=0.01, max_positions=2
+            ),
+            "rl_alpha": StrategyConfig(
+                name="RL_Alpha_Generator", position_size=0.02, max_positions=3
+            ),
+        }
+    )
 
     class Config:
         env_file = ".env"
@@ -261,11 +397,11 @@ class FrameworkConfig(BaseSettings):
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields from .env file
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_paths(self):
         """Valide et crée les répertoires nécessaires"""
         if self.project_root:
-            for path_name in ['data_dir', 'logs_dir', 'artifacts_dir']:
+            for path_name in ["data_dir", "logs_dir", "artifacts_dir"]:
                 path_value = getattr(self, path_name, None)
                 if path_value and not path_value.is_absolute():
                     setattr(self, path_name, self.project_root / path_value)
@@ -277,19 +413,21 @@ class FrameworkConfig(BaseSettings):
 
         return self
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_environment_settings(self):
         """Valide les paramètres selon l'environnement"""
         if self.environment == Environment.PRODUCTION:
             if self.secret_key == "dev-secret-key-change-in-production":
-                raise ValueError('SECRET_KEY must be changed in production')
+                raise ValueError("SECRET_KEY must be changed in production")
         return self
 
     def get_strategy_config(self, strategy_name: str) -> Optional[StrategyConfig]:
         """Récupère la configuration d'une stratégie"""
         return self.strategies.get(strategy_name)
 
-    def get_data_provider_config(self, provider_name: str) -> Optional[DataProviderConfig]:
+    def get_data_provider_config(
+        self, provider_name: str
+    ) -> Optional[DataProviderConfig]:
         """Récupère la configuration d'un fournisseur de données"""
         return self.data_providers.get(provider_name)
 
@@ -318,15 +456,16 @@ def get_config() -> FrameworkConfig:
 def load_config_from_file(file_path: str) -> FrameworkConfig:
     """Charge la configuration depuis un fichier"""
     import json
+
     import yaml
 
     path = Path(file_path)
 
-    if path.suffix.lower() == '.json':
-        with open(path, 'r') as f:
+    if path.suffix.lower() == ".json":
+        with open(path) as f:
             config_data = json.load(f)
-    elif path.suffix.lower() in ['.yml', '.yaml']:
-        with open(path, 'r') as f:
+    elif path.suffix.lower() in [".yml", ".yaml"]:
+        with open(path) as f:
             config_data = yaml.safe_load(f)
     else:
         raise ValueError(f"Unsupported config file format: {path.suffix}")
@@ -375,10 +514,7 @@ class TestingConfig(FrameworkConfig):
         self.environment = Environment.TESTING
         self.log_level = LogLevel.DEBUG
         # Base de données en mémoire pour les tests
-        self.database = DatabaseConfig(
-            host="sqlite",
-            database=":memory:"
-        )
+        self.database = DatabaseConfig(host="sqlite", database=":memory:")
 
     class Config:
         env_prefix = "TEST_"
@@ -390,7 +526,7 @@ def get_config_for_environment(env: str) -> FrameworkConfig:
         Environment.DEVELOPMENT: DevelopmentConfig(),
         Environment.PRODUCTION: ProductionConfig(),
         Environment.TESTING: TestingConfig(),
-        Environment.BACKTESTING: FrameworkConfig(environment=Environment.BACKTESTING)
+        Environment.BACKTESTING: FrameworkConfig(environment=Environment.BACKTESTING),
     }
 
     try:
@@ -401,7 +537,9 @@ def get_config_for_environment(env: str) -> FrameworkConfig:
         return FrameworkConfig()
 
 
-def load_environment_config(config_dir: Optional[str] = None, environment: Optional[str] = None) -> Dict[str, Any]:
+def load_environment_config(
+    config_dir: Optional[str] = None, environment: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Charge la configuration depuis le nouveau système multi-environnement.
 
@@ -418,11 +556,15 @@ def load_environment_config(config_dir: Optional[str] = None, environment: Optio
         manager = get_configuration_manager(config_dir, environment)
         return manager.get_config()
     except ImportError:
-        logger.warning("⚠️ Nouveau système de configuration non disponible, utilisation du système legacy")
+        logger.warning(
+            "⚠️ Nouveau système de configuration non disponible, utilisation du système legacy"
+        )
         return {}
 
 
-def get_enhanced_config(config_dir: Optional[str] = None, environment: Optional[str] = None) -> FrameworkConfig:
+def get_enhanced_config(
+    config_dir: Optional[str] = None, environment: Optional[str] = None
+) -> FrameworkConfig:
     """
     Retourne une configuration enrichie combinant l'ancien et le nouveau système.
 
@@ -453,7 +595,7 @@ def get_enhanced_config(config_dir: Optional[str] = None, environment: Optional[
                     base_config.log_level = LogLevel(logging_config["level"])
 
                 # Ajouter une référence à la config complète
-                setattr(base_config, '_environment_config', env_config)
+                setattr(base_config, "_environment_config", env_config)
 
         except Exception as e:
             logger.warning(f"⚠️ Erreur chargement configuration environnement: {e}")
@@ -473,6 +615,7 @@ def is_feature_enabled_legacy(feature_name: str) -> bool:
     """
     try:
         from ..infrastructure.config.environment_config import is_feature_enabled
+
         return is_feature_enabled(feature_name)
     except ImportError:
         # Fallback: toujours activé si le nouveau système n'est pas disponible
